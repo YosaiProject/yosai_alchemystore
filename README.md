@@ -1,2 +1,2 @@
 # realmalchemy
-SQLAlchemy related services required to support RDBMS data stores in Yosai
+SQLAlchemy-enabled RDBMS integration for Yosai
