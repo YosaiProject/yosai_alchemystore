@@ -81,10 +81,10 @@ class Privilege(Base):
     )
 
     pk_id = Column(Integer, primary_key=True)
-    role_perm_id = Column(ForeignKey('security.role_permission.pk_id'), nullable=False)
+    role_id = Column(ForeignKey('security.role.pk_id'), nullable=False)
     user_id = Column(ForeignKey('security.user.pk_id'), nullable=False)
 
     def __repr__(self):
-        return "<Privilege(pk_id={0},role_perm_id={1},user_id={2},"\
-               .format(self.pk_id, self.role_perm_id, self.user_id)
+        return "<Privilege(pk_id={0},role_id={1},user_id={2},"\
+               .format(self.pk_id, self.role_id, self.user_id)
 
