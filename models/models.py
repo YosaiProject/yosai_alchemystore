@@ -8,7 +8,7 @@ class Party(Base):
     __tablename__ = 'party'
     __table_args__ = {'schema': 'security'}
 
-    pk_id = Column(Integer, primary_key=True, server_default=text("nextval('party.party_pk_id_seq'::regclass)"))
+    pk_id = Column(Integer, primary_key=True)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
 
@@ -17,7 +17,7 @@ class User(Base):
     __tablename__ = 'user'
     __table_args__ = {'schema': 'security'}
 
-    pk_id = Column(Integer, primary_key=True, server_default=text("nextval('security.user_pk_id_seq'::regclass)"))
+    pk_id = Column(Integer, primary_key=True)
     party_id = Column(ForeignKey('party.party.pk_id'), nullable=False, unique=True)
     identifier = Column(String(255), nullable=False, unique=True)
 
@@ -28,7 +28,7 @@ class Credentials(Base):
     __tablename__ = 'credentials'
     __table_args__ = {'schema': 'security'}
 
-    pk_id = Column(Integer, primary_key=True, server_default=text("nextval('security.credentials_pk_id_seq'::regclass)"))
+    pk_id = Column(Integer, primary_key=True)
     user_id = Column(ForeignKey('security.user.pk_id'), nullable=False, unique=True)
     password = Column(Text, nullable=False)
     expiration_dt = Column(DateTime(timezone=True), nullable=False)
@@ -42,7 +42,7 @@ class Permission(Base):
         {'schema': 'security'}
     )
 
-    pk_id = Column(Integer, primary_key=True, server_default=text("nextval('security.permission_pk_id_seq'::regclass)"))
+    pk_id = Column(Integer, primary_key=True)
     domain = Column(String(100), nullable=False)
     action = Column(String(100), nullable=False)
     instance = Column(String(100), nullable=False)
@@ -52,7 +52,7 @@ class Role(Base):
     __tablename__ = 'role'
     __table_args__ = {'schema': 'security'}
 
-    pk_id = Column(Integer, primary_key=True, server_default=text("nextval('security.role_pk_id_seq'::regclass)"))
+    pk_id = Column(Integer, primary_key=True)
     title = Column(String(100))
 
 
@@ -62,7 +62,7 @@ class Privilege(Base):
         {'schema': 'security'}
     )
 
-    pk_id = Column(Integer, primary_key=True, server_default=text("nextval('security.privilege_pk_id_seq'::regclass)"))
+    pk_id = Column(Integer, primary_key=True)
     role_id = Column(ForeignKey('security.role.pk_id'), nullable=False)
     permission_id = Column(ForeignKey('security.permission.pk_id'), nullable=False)
 
