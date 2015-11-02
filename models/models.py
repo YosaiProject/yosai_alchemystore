@@ -18,7 +18,7 @@ class User(Base):
     __table_args__ = {'schema': 'security'}
 
     pk_id = Column(Integer, primary_key=True)
-    party_id = Column(ForeignKey('party.party.pk_id'), nullable=False, unique=True)
+    party_id = Column(ForeignKey('security.party.pk_id'), nullable=False, unique=True)
     identifier = Column(String(255), nullable=False, unique=True)
 
     party = relationship('Party')
