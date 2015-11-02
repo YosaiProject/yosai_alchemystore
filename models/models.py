@@ -56,8 +56,8 @@ class Role(Base):
     title = Column(String(100))
 
 
-class Privilege(Base):
-    __tablename__ = 'privilege'
+class RolePermission(Base):
+    __tablename__ = 'role_permission'
     __table_args__ = (
         {'schema': 'security'}
     )
@@ -70,6 +70,21 @@ class Privilege(Base):
     role = relationship('Role')
 
     def __repr__(self):
-        return "<Privilege(pk_id={0},role_id={1},permission_id={2},"\
+        return "<RolePermission(pk_id={0},role_id={1},permission_id={2},"\
                .format(self.pk_id, self.role_id, self.permission_id)
+
+
+class Privilege(Base):
+    __tablename__ = 'privilege'
+    __table_args__ = (
+        {'schema': 'security'}
+    )
+
+    pk_id = Column(Integer, primary_key=True)
+    role_perm_id = Column(ForeignKey('security.role_permission.pk_id'), nullable=False)
+    user_id = Column(ForeignKey('security.user.pk_id'), nullable=False)
+
+    def __repr__(self):
+        return "<Privilege(pk_id={0},role_perm_id={1},user_id={2},"\
+               .format(self.pk_id, self.role_perm_id, self.user_id)
 
