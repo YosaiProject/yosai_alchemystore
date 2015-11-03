@@ -74,8 +74,8 @@ class RolePermission(Base):
                .format(self.pk_id, self.role_id, self.permission_id)
 
 
-class Privilege(Base):
-    __tablename__ = 'privilege'
+class RoleMembership(Base):
+    __tablename__ = 'role_membership'
     __table_args__ = (
         {'schema': 'security'}
     )
@@ -85,6 +85,6 @@ class Privilege(Base):
     user_id = Column(ForeignKey('security.user.pk_id'), nullable=False)
 
     def __repr__(self):
-        return "<Privilege(pk_id={0},role_id={1},user_id={2},"\
+        return "<RoleMembership(pk_id={0},role_id={1},user_id={2},"\
                .format(self.pk_id, self.role_id, self.user_id)
 
