@@ -3,29 +3,32 @@ class Account:
 
 
 class AlchemyAccountStore:
+    """
+    AlchemyAccountStore provides the realm-facing API.  It parcels query
+    results and returns them to its corresponding realm.
+    """
 
     def __init__(self):
         self.handler = QueryHandler()
-        self.resolver = QueryResultResolver()
 
     def get_account(self, request):
         """
         :param request:  the request object defining the criteria by which
                          to query the account store
         :type request:  AuthenticationToken or Account
-        
+
         :returns: Account
         """
         account_id = request.account_id
-        credentials = self.resolver.resolve_credentials(self.handler.get_credentials(...))
-        privileges = self.resolver.resolve_privileges(self.handler.get_privileges(...))
-        roles = self.resolver.resolve_role(self.handler.get_roles(...))
+        credentials = self.handler.get_credentials(...)
+        privileges = self.handler.get_privileges(...)
+        roles = self.handler.get_roles(...)
         account = Account(account_id=account_id,
                           credentials=credentials,
                           permissions=privileges,
-                          roles=roles) 
+                          roles=roles)
 
-        return account 
+        return account
 
     def get_credentials(self, authc_token):
         """
@@ -36,7 +39,7 @@ class AlchemyAccountStore:
         account = Account(account_id=account_id,
                           credentials=credentials)
 
-        return account 
+        return account
 
 
     def get_authz_info(self, identifiers):
@@ -47,22 +50,15 @@ class AlchemyAccountStore:
         roles = self.handler.get_roles(...)
         account = Account(account_id=account_id,
                           permissions=privileges,
-                          roles=roles) 
-        return account 
-
-
-class QueryResultResolver:
-    """
-    Transforms query results into the objects understood by Yosai
-    """
-    pass
+                          roles=roles)
+        return account
 
 
 class QueryHandler:
     """
     Facilitates requests from the AccountStore to the Database
 
-    step 1:  generate an orm query 
+    step 1:  generate an orm query
     step 2:  execute the query
     step 3:  return results
     """
@@ -75,14 +71,14 @@ class QueryHandler:
 
     def get_privileges(self, identifiers):
         pass
-    
+
     def get_roles(self, identifiers):
         pass
 
 
 class QueryGenerator:
     """
-    Generates the ORM queries that facilitate the get_xxx requests from the 
+    Generates the ORM queries that facilitate the get_xxx requests from the
     AccountStore
     """
     def generate_credentials_query
@@ -95,4 +91,3 @@ class QueryExecutor:
     Executes the queries created by the QueryGenerator
     """
     def execute
-
