@@ -1,7 +1,31 @@
-class Account:
+"""
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+"""
+
+from .meta import (
+    session,
+)
+
+
+class AlchemyAccount:
     pass
 
-
+# account_abcs.CredentialsAccountStore, account_abcs.AuthorizationAccountStore
 class AlchemyAccountStore:
     """
     AlchemyAccountStore provides the realm-facing API.  It parcels query
@@ -11,22 +35,21 @@ class AlchemyAccountStore:
     def __init__(self):
         self.handler = QueryHandler()
 
-    def get_account(self, request):
+    def get_account(self, authc_token):
         """
-        :param request:  the request object defining the criteria by which
-                         to query the account store
-        :type request:  AuthenticationToken or Account
+        :param authc_token:  the request object defining the criteria by which
+                             to query the account store
+        :type authc_token:  AuthenticationToken
 
         :returns: Account
         """
-        account_id = request.account_id
         credentials = self.handler.get_credentials(...)
-        privileges = self.handler.get_privileges(...)
-        roles = self.handler.get_roles(...)
-        account = Account(account_id=account_id,
-                          credentials=credentials,
-                          permissions=privileges,
-                          roles=roles)
+        permissions = self.get_permissions(identifiers)
+        roles = self.get_roles(identifiers)
+        account = AlchemyAccount(account_id=account_id,
+                                 credentials=credentials,
+                                 permissions=permissions,
+                                 roles=roles)
 
         return account
 
@@ -46,12 +69,18 @@ class AlchemyAccountStore:
         """
         :returns: Account
         """
-        privileges = self.handler.get_privileges(...)
-        roles = self.handler.get_roles(...)
+        permissions = self.get_permissions(identifiers)
+        roles = self.get_roles(identifiers)
         account = Account(account_id=account_id,
                           permissions=privileges,
                           roles=roles)
         return account
+
+    def get_permissions(self, identifiers):
+        self.handler.get_permissions(identifiers)
+
+    def get_roles(self, identifiers):
+        self.handler.get_roles(identifiers)
 
 
 class QueryHandler:
@@ -63,13 +92,10 @@ class QueryHandler:
     step 3:  return results
     """
 
-    def get_account(self, request):
-        pass
-
     def get_credentials(self, authc_token):
         pass
 
-    def get_privileges(self, identifiers):
+    def get_permissions(self, identifiers):
         pass
 
     def get_roles(self, identifiers):
