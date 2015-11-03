@@ -28,12 +28,17 @@ class AlchemyAccount:
 # account_abcs.CredentialsAccountStore, account_abcs.AuthorizationAccountStore
 class AlchemyAccountStore:
     """
-    AlchemyAccountStore provides the realm-facing API.  It parcels query
-    results and returns them to its corresponding realm.
+    AlchemyAccountStore provides the realm-facing API to the relational database
+    that is managed through the SQLAlchemy ORM.
+
+    step 1:  generate an orm query
+    step 2:  execute the query
+    step 3:  return results
     """
 
-    def __init__(self):
-        self.handler = QueryHandler()
+    def __init__(self, session):
+        self.query_generator = QueryGenerator(session)
+        self.query_executor = QueryExecutor(session)
 
     def get_account(self, authc_token):
         """
@@ -43,7 +48,12 @@ class AlchemyAccountStore:
 
         :returns: Account
         """
-        credentials = self.handler.get_credentials(...)
+        identifier = authc_token.identifier
+
+        query = self.query_generator.generate_credentials_query(identifier)
+        credentials = self.query_executor.execute(query)
+
+
         permissions = self.get_permissions(identifiers)
         roles = self.get_roles(identifiers)
         account = AlchemyAccount(account_id=account_id,
@@ -82,24 +92,6 @@ class AlchemyAccountStore:
     def get_roles(self, identifiers):
         self.handler.get_roles(identifiers)
 
-
-class QueryHandler:
-    """
-    Facilitates requests from the AccountStore to the Database
-
-    step 1:  generate an orm query
-    step 2:  execute the query
-    step 3:  return results
-    """
-
-    def get_credentials(self, authc_token):
-        pass
-
-    def get_permissions(self, identifiers):
-        pass
-
-    def get_roles(self, identifiers):
-        pass
 
 
 class QueryGenerator:
