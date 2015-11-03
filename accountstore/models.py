@@ -1,8 +1,9 @@
 from sqlalchemy import (Column, Date, DateTime, ForeignKey, Integer, String, 
-                        Text, text)
+                        Text, text, Enum)
 from sqlalchemy.orm import relationship
 from meta import Base
 # from yosai import DefaultPermission, SimpleRole
+
 
 class Party(Base):
     __tablename__ = 'party'
@@ -12,6 +13,9 @@ class Party(Base):
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
 
+    def __repr__(self):
+        return ("Party(first_name={0}, last_name={1})".
+                format(self.first_name, self.last_name))
 
 class User(Base):
     __tablename__ = 'user'
@@ -23,6 +27,8 @@ class User(Base):
 
     party = relationship('Party')
 
+    def __repr__(self):
+        return "User(identifier={0})".format(self.identifier)
 
 class Credentials(Base):
     __tablename__ = 'credentials'
@@ -34,6 +40,9 @@ class Credentials(Base):
     expiration_dt = Column(DateTime(timezone=True), nullable=False)
 
     user = relationship('User')
+
+    def __repr__(self):
+        return "Credentials(user_id={0})".format(self.user_id)
 
 
 class Domain(Base):
@@ -77,9 +86,13 @@ class Permission(Base):
     )
 
     pk_id = Column(Integer, primary_key=True)
-    domain = Column(Column(ForeignKey('security.domain.pk_id'), nullable=False)
-    action = Column(Column(ForeignKey('security.action.pk_id'), nullable=False)
-    resource = Column(Column(ForeignKey('security.resource.pk_id'), nullable=False)
+    domain_id = Column(ForeignKey('security.domain.pk_id'), nullable=True)
+    action_id = Column(ForeignKey('security.action.pk_id'), nullable=True)
+    resource_id = Column(ForeignKey('security.resource.pk_id'), nullable=True)
+
+    def __repr__(self):
+        return ("Permission(domain_id={0},action_id={1},resource_id={2})".
+                format(self.domain_id, self.action_id, self.resource_id))
 
 
 # The Role orm model will inherit from yosai.SimpleRole once
@@ -90,6 +103,9 @@ class Role(Base):
 
     pk_id = Column(Integer, primary_key=True)
     title = Column(String(100))
+
+    def __repr__(self):
+        return "Role(title={0})".format(self.title)
 
 
 class RolePermission(Base):
