@@ -71,7 +71,7 @@ class User(Base):
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
     identifier = Column(String(255), nullable=False, unique=True)
-    
+
     roles = relationship('Role', secondary=role_membership, backref='users')
     permissions = association_proxy('roles', 'permissions')
 
@@ -83,7 +83,7 @@ class Credential(Base):
     __tablename__ = 'credential'
 
     pk_id = Column(Integer, primary_key=True)
-    user_id = Column(ForeignKey('security.user.pk_id'), nullable=False, unique=True)
+    user_id = Column(ForeignKey('user.pk_id'), nullable=False, unique=True)
     credential = Column(Text, nullable=False)
     expiration_dt = Column(DateTime(timezone=True), nullable=False)
 
@@ -129,9 +129,9 @@ class Permission(Base):
     __tablename__ = 'permission'
 
     pk_id = Column(Integer, primary_key=True)
-    domain_id = Column(ForeignKey('security.domain.pk_id'), nullable=True)
-    action_id = Column(ForeignKey('security.action.pk_id'), nullable=True)
-    resource_id = Column(ForeignKey('security.resource.pk_id'), nullable=True)
+    domain_id = Column(ForeignKey('domain.pk_id'), nullable=True)
+    action_id = Column(ForeignKey('action.pk_id'), nullable=True)
+    resource_id = Column(ForeignKey('resource.pk_id'), nullable=True)
 
     roles = relationship('Role', secondary=role_permission,
                          backref='permissions')

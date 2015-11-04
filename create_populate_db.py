@@ -7,17 +7,18 @@ from yosai_alchemystore import (
     Action,
     Resource,
     Permission,
+    Role,
 )
 
 Base.metadata.create_all(engine)
 
 # Please watch 'The Big Lebowski' so that you may understand the following data.
-users = [User(first_name='Jeffrey', last_name='Lebowski'),
-         User(first_name='Walter', last_name='Sobchak'),
-         User(first_name='Larry', last_name='Sellers'),
-         User(first_name='Jackie', last_name='Treehorn'),
-         User(first_name='Karl', last_name='Hungus'),
-         User(first_name='Marty', last_name='Houston')]
+users = [User(first_name='Jeffrey', last_name='Lebowski', identifier='thedude'),
+         User(first_name='Walter', last_name='Sobchak', identifier='walter'),
+         User(first_name='Larry', last_name='Sellers', identifier='larry'),
+         User(first_name='Jackie', last_name='Treehorn', identifier='jackie'),
+         User(first_name='Karl', last_name='Hungus', identifier='karl'),
+         User(first_name='Marty', last_name='Houston', identifier='marty')]
 
 domains = [Domain(name='money'),
            Domain(name='leatherduffelbag')]
@@ -46,7 +47,7 @@ users = dict((user.first_name+'_'+user.last_name, user) for user in session.quer
 domains = dict((domain.name, domain) for domain in session.query(Domain).all())
 actions = dict((action.name, action) for action in session.query(Action).all())
 resources = dict((resource.name, resource) for resource in session.query(Resource).all())
-roles = dict((role.name, role) for role in session.query(Role).all())
+roles = dict((role.title, role) for role in session.query(Role).all())
 
 perm1 = Permission(domain=domains['money'],
                    action=actions['write'],

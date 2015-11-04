@@ -19,8 +19,15 @@ under the License.
 
 from .accountstore.meta import (
     engine,
+    Base,
+    Session,
 )
 
 from .accountstore.models import (
-    Base,
+    User,
+    Domain,
+    Action,
+    Resource,
+    Permission,
+    Role,
 )
