@@ -25,5 +25,4 @@ Base = declarative_base()
 
 engine = create_engine("sqlite:///yosai.db", echo=True)
 
-Session = scoped_session(sessionmaker(bind=engine))
-session = Session()
+Session = sessionmaker(bind=engine)
