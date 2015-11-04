@@ -18,6 +18,10 @@ under the License.
 """
 
 """
+models.py features a basic, non-hierarchical, non-constrained RBAC data model,
+also known as a flat model
+-- Ref:  http://csrc.nist.gov/rbac/sandhu-ferraiolo-kuhn-00.pdf
+
 +-----------------+          +-------------------+          +---------------+
 |                 |          |                   |          |               |
 |                 |          |    R o l e        |          |               |
@@ -38,7 +42,7 @@ under the License.
 
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import (Column, Date, DateTime, ForeignKey, Integer, String,
-                        Text, text, Enum)
+                        Text, text, Enum, Table)
 from sqlalchemy.orm import relationship, backref
 
 from yosai_alchemystore import (
@@ -53,10 +57,9 @@ role_permission = Table(
     Column('permission_id', ForeignKey('permission.pk_id'), primary_key=True)
 )
 
-
 role_membership = Table(
     'role_membership', Base.metadata,
-    Column('role_id', ForeignKey('role.pk_id', primary_key=True),
+    Column('role_id', ForeignKey('role.pk_id'), primary_key=True),
     Column('user_id', ForeignKey('user.pk_id'), primary_key=True)
 )
 
@@ -68,8 +71,9 @@ class User(Base):
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
     identifier = Column(String(255), nullable=False, unique=True)
-
-    roles = relationship('Role', secondary=role_membership, secondary='users')
+    
+    roles = relationship('Role', secondary=role_membership, backref='users')
+    permissions = association_proxy('roles', 'permissions')
 
     def __repr__(self):
         return "User(identifier={0})".format(self.identifier)
@@ -129,7 +133,9 @@ class Permission(Base):
     action_id = Column(ForeignKey('security.action.pk_id'), nullable=True)
     resource_id = Column(ForeignKey('security.resource.pk_id'), nullable=True)
 
-    roles = relationship('Role', secondary=role_permission, backref='permissions')
+    roles = relationship('Role', secondary=role_permission,
+                         backref='permissions')
+    users = association_proxy('roles', 'users')
 
     def __repr__(self):
         return ("Permission(domain_id={0},action_id={1},resource_id={2})".
