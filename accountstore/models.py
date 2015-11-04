@@ -47,6 +47,20 @@ from yosai_alchemystore import (
 
 # from yosai import DefaultPermission, SimpleRole
 
+role_permission = Table(
+    'role_permission', Base.metadata,
+    Column('role_id', ForeignKey('role.pk_id'), primary_key=True),
+    Column('permission_id', ForeignKey('permission.pk_id'), primary_key=True)
+)
+
+
+role_membership = Table(
+    'role_membership', Base.metadata,
+    Column('role_id', ForeignKey('role.pk_id', primary_key=True),
+    Column('user_id', ForeignKey('user.pk_id'), primary_key=True)
+)
+
+
 class User(Base):
     __tablename__ = 'user'
 
@@ -55,11 +69,7 @@ class User(Base):
     last_name = Column(String(255), nullable=False)
     identifier = Column(String(255), nullable=False, unique=True)
 
-    role_membership = relationship("RoleMembership", backref="user",
-                                   cascade="all, delete-orphan")
-
-    roles = association_proxy('role_membership', 'roles',
-                              creator=lambda role: RoleMembership(roles=role))
+    roles = relationship('Role', secondary=role_membership, secondary='users')
 
     def __repr__(self):
         return "User(identifier={0})".format(self.identifier)
@@ -119,8 +129,7 @@ class Permission(Base):
     action_id = Column(ForeignKey('security.action.pk_id'), nullable=True)
     resource_id = Column(ForeignKey('security.resource.pk_id'), nullable=True)
 
-    roles = association_proxy('role_permission', 'role',
-                              creator=lambda r: RolePermission(role=r))
+    roles = relationship('Role', secondary=role_permission, backref='permissions')
 
     def __repr__(self):
         return ("Permission(domain_id={0},action_id={1},resource_id={2})".
@@ -135,45 +144,5 @@ class Role(Base):
     pk_id = Column(Integer, primary_key=True)
     title = Column(String(100))
 
-    role_permissions = relationship("RolePermission", backref="role",
-                                    cascade="all, delete-orphan")
-
-    permissions = association_proxy('role_permission', 'permissions',
-                                    creator=lambda perm: RolePermission(permissions=perm))
-
-    users = association_proxy('role_membership', 'user',
-                              creator=lambda u: RoleMembership(user=u))
-
     def __repr__(self):
         return "Role(title={0})".format(self.title)
-
-
-class RolePermission(Base):
-    __tablename__ = 'role_permission'
-
-    pk_id = Column(Integer, primary_key=True)
-    role_id = Column(ForeignKey('security.role.pk_id'), nullable=False)
-    permission_id = Column(ForeignKey('security.permission.pk_id'), nullable=False)
-
-    permissions = relationship("Permission",
-                               backref=backref("role_permission",
-                                               cascade="all, delete-orphan"))
-
-    def __repr__(self):
-        return "<RolePermission(pk_id={0},role_id={1},permission_id={2},"\
-               .format(self.pk_id, self.role_id, self.permission_id)
-
-
-class RoleMembership(Base):
-    __tablename__ = 'role_membership'
-
-    pk_id = Column(Integer, primary_key=True)
-    role_id = Column(ForeignKey('security.role.pk_id'), nullable=False)
-    user_id = Column(ForeignKey('security.user.pk_id'), nullable=False)
-
-    roles = relationship("Role", backref=backref("role_membership",
-                                                 cascade="all, delete-orphan"))
-
-    def __repr__(self):
-        return "<RoleMembership(pk_id={0},role_id={1},user_id={2},"\
-               .format(self.pk_id, self.role_id, self.user_id)
