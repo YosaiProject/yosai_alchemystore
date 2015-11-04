@@ -17,49 +17,63 @@ specific language governing permissions and limitations
 under the License.
 """
 
+"""
++-----------------+          +-------------------+          +---------------+
+|                 |          |                   |          |               |
+|                 |          |    R o l e        |          |               |
+|    R o l e      +----------+    Permission     +----------+   Permission  |
+|                 |          |                   |          |               |
++-----------------+          +-------------------+          +---------------+
 
+
++-----------------+          +-------------------+          +---------------+
+|                 |          |                   |          |               |
+|                 |          |    R o l e        |          |               |
+|    U s e r      +----------+    Membership     +----------+   R o l e     |
+|                 |          |                   |          |               |
++-----------------+          +-------------------+          +---------------+
+
+"""
+
+
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import (Column, Date, DateTime, ForeignKey, Integer, String,
                         Text, text, Enum)
-from sqlalchemy.orm import relationship
-from meta import Base
+from sqlalchemy.orm import relationship, backref
+
+from yosai_alchemystore import (
+    Base
+)
+
 # from yosai import DefaultPermission, SimpleRole
 
-
-class Party(Base):
-    __tablename__ = 'party'
-    __table_args__ = {'schema': 'security'}
+class User(Base):
+    __tablename__ = 'user'
 
     pk_id = Column(Integer, primary_key=True)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
-
-    def __repr__(self):
-        return ("Party(first_name={0}, last_name={1})".
-                format(self.first_name, self.last_name))
-
-class User(Base):
-    __tablename__ = 'user'
-    __table_args__ = {'schema': 'security'}
-
-    pk_id = Column(Integer, primary_key=True)
-    party_id = Column(ForeignKey('security.party.pk_id'), nullable=False, unique=True)
     identifier = Column(String(255), nullable=False, unique=True)
 
-    party = relationship('Party')
+    role_membership = relationship("RoleMembership", backref="user",
+                                   cascade="all, delete-orphan")
+
+    roles = association_proxy('role_membership', 'roles',
+                              creator=lambda role: RoleMembership(roles=role))
 
     def __repr__(self):
         return "User(identifier={0})".format(self.identifier)
 
-class Credentials(Base):
-    __tablename__ = 'credentials'
-    __table_args__ = {'schema': 'security'}
+
+class Credential(Base):
+    __tablename__ = 'credential'
 
     pk_id = Column(Integer, primary_key=True)
     user_id = Column(ForeignKey('security.user.pk_id'), nullable=False, unique=True)
-    password = Column(Text, nullable=False)
+    credential = Column(Text, nullable=False)
     expiration_dt = Column(DateTime(timezone=True), nullable=False)
 
-    user = relationship('User')
+    user = relationship('User', backref='credential')
 
     def __repr__(self):
         return "Credentials(user_id={0})".format(self.user_id)
@@ -67,7 +81,6 @@ class Credentials(Base):
 
 class Domain(Base):
     __tablename__ = 'domain'
-    __table_args__ = {'schema': 'security'}
 
     pk_id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
@@ -78,7 +91,6 @@ class Domain(Base):
 
 class Action(Base):
     __tablename__ = 'action'
-    __table_args__ = {'schema': 'security'}
 
     pk_id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
@@ -89,7 +101,6 @@ class Action(Base):
 
 class Resource(Base):
     __tablename__ = 'resource'
-    __table_args__ = {'schema': 'security'}
 
     pk_id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
@@ -97,18 +108,19 @@ class Resource(Base):
     def __repr__(self):
         return "Resource(name={0})".format(self.name)
 
+
 # The Permission orm model will inherit from yosai.DefaultPermission once
 # preliminary testing is finished:
 class Permission(Base):
     __tablename__ = 'permission'
-    __table_args__ = (
-        {'schema': 'security'}
-    )
 
     pk_id = Column(Integer, primary_key=True)
     domain_id = Column(ForeignKey('security.domain.pk_id'), nullable=True)
     action_id = Column(ForeignKey('security.action.pk_id'), nullable=True)
     resource_id = Column(ForeignKey('security.resource.pk_id'), nullable=True)
+
+    roles = association_proxy('role_permission', 'role',
+                              creator=lambda r: RolePermission(role=r))
 
     def __repr__(self):
         return ("Permission(domain_id={0},action_id={1},resource_id={2})".
@@ -119,10 +131,18 @@ class Permission(Base):
 # preliminary testing is finished:
 class Role(Base):
     __tablename__ = 'role'
-    __table_args__ = {'schema': 'security'}
 
     pk_id = Column(Integer, primary_key=True)
     title = Column(String(100))
+
+    role_permissions = relationship("RolePermission", backref="role",
+                                    cascade="all, delete-orphan")
+
+    permissions = association_proxy('role_permission', 'permissions',
+                                    creator=lambda perm: RolePermission(permissions=perm))
+
+    users = association_proxy('role_membership', 'user',
+                              creator=lambda u: RoleMembership(user=u))
 
     def __repr__(self):
         return "Role(title={0})".format(self.title)
@@ -130,16 +150,14 @@ class Role(Base):
 
 class RolePermission(Base):
     __tablename__ = 'role_permission'
-    __table_args__ = (
-        {'schema': 'security'}
-    )
 
     pk_id = Column(Integer, primary_key=True)
     role_id = Column(ForeignKey('security.role.pk_id'), nullable=False)
     permission_id = Column(ForeignKey('security.permission.pk_id'), nullable=False)
 
-    permission = relationship('Permission')
-    role = relationship('Role')
+    permissions = relationship("Permission",
+                               backref=backref("role_permission",
+                                               cascade="all, delete-orphan"))
 
     def __repr__(self):
         return "<RolePermission(pk_id={0},role_id={1},permission_id={2},"\
@@ -148,13 +166,13 @@ class RolePermission(Base):
 
 class RoleMembership(Base):
     __tablename__ = 'role_membership'
-    __table_args__ = (
-        {'schema': 'security'}
-    )
 
     pk_id = Column(Integer, primary_key=True)
     role_id = Column(ForeignKey('security.role.pk_id'), nullable=False)
     user_id = Column(ForeignKey('security.user.pk_id'), nullable=False)
+
+    roles = relationship("Role", backref=backref("role_membership",
+                                                 cascade="all, delete-orphan"))
 
     def __repr__(self):
         return "<RoleMembership(pk_id={0},role_id={1},user_id={2},"\

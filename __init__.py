@@ -18,7 +18,9 @@ under the License.
 """
 
 from .accountstore.meta import (
-    Base,
     engine,
 )
 
+from .accountstore.models import (
+    Base,
+)
