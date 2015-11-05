@@ -34,7 +34,7 @@ from models import (
     RoleMembership,
 )
 
-from sqlalchemy.sql.expression import case
+from sqlalchemy import case
 
 
 class AlchemyAccount:
@@ -133,24 +133,16 @@ class AlchemyAccountStore:
 
     def get_permissions_query(self):
 
+        domain = case([(domain.c.name is None, '*')], else_=domain.c.name)
+        action = case([(action.c.name is None, '*')], else_=action.c.name)
+        resource = case([(resource.c.name is None, '*')], else_=resource.c.name)
 
-SELECT (
-        CASE
-            WHEN DOMAIN.name IS NULL THEN '*'
-            ELSE DOMAIN.name
-        END )
-    || ':' || group_concat (
-        DISTINCT (
-            CASE
-                WHEN ACTION.name IS NULL THEN '*'
-                ELSE ACTION.name
-            END ) )
-    || ':' || group_concat (
-        DISTINCT (
-            CASE
-                WHEN RESOURCE.name IS NULL THEN '*'
-                ELSE RESOURCE.name
-            END ) ) AS PERMISSION
+
+SELECT ( CASE WHEN DOMAIN.name IS NULL THEN '*' ELSE DOMAIN.name END )
+        || ':' ||
+        group_concat ( DISTINCT ( CASE WHEN ACTION.name IS NULL THEN '*' ELSE ACTION.name END ) )
+        || ':' ||
+        group_concat ( DISTINCT ( CASE WHEN RESOURCE.name IS NULL THEN '*' ELSE RESOURCE.name END ) ) AS PERMISSION
 FROM
     PERMISSION
     LEFT OUTER JOIN ACTION ON PERMISSION.action_id = ACTION.pk_id
