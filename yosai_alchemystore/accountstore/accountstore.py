@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 
-from .meta import (
+from accountstore import (
     Session,
 )
 
@@ -33,6 +33,9 @@ from models import (
     RolePermission,
     RoleMembership,
 )
+
+from sqlalchemy.sql.expression import case
+
 
 class AlchemyAccount:
     pass
@@ -127,3 +130,32 @@ class AlchemyAccountStore:
     @session_context
     def get_roles(self, identifiers):
         self.handler.get_roles(identifiers)
+
+    def get_permissions_query(self):
+
+
+SELECT (
+        CASE
+            WHEN DOMAIN.name IS NULL THEN '*'
+            ELSE DOMAIN.name
+        END )
+    || ':' || group_concat (
+        DISTINCT (
+            CASE
+                WHEN ACTION.name IS NULL THEN '*'
+                ELSE ACTION.name
+            END ) )
+    || ':' || group_concat (
+        DISTINCT (
+            CASE
+                WHEN RESOURCE.name IS NULL THEN '*'
+                ELSE RESOURCE.name
+            END ) ) AS PERMISSION
+FROM
+    PERMISSION
+    LEFT OUTER JOIN ACTION ON PERMISSION.action_id = ACTION.pk_id
+    LEFT OUTER JOIN DOMAIN ON PERMISSION.domain_id = DOMAIN.pk_id
+    LEFT OUTER JOIN RESOURCE ON PERMISSION.resource_id = RESOURCE.pk_id
+GROUP BY
+    PERMISSION.domain_id,
+    PERMISSION.resource_id;
