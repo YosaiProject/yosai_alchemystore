@@ -128,8 +128,9 @@ def get_permissions_query():
     resource_agg = func.group_concat(theresource.distinct())
 
     return (session.query(thedomain, action_agg, resource_agg).
-            outerjoin(Action, Permission.action_id == Action.pk_id).
+
             outerjoin(Domain, Permission.domain_id == Domain.pk_id).
+            outerjoin(Action, Permission.action_id == Action.pk_id).
             outerjoin(Resource, Permission.resource_id == Resource.pk_id).
             group_by(Permission.domain_id, Permission.resource_id))
 

@@ -130,17 +130,17 @@ class AlchemyAccountStore:
 
     def get_permissions_query(self):
 
-        domain = case([(Domain.name == None, '*')], else_=Domain.name)
+        thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
         action = case([(Action.name == None, '*')], else_=Action.name)
         resource = case([(Resource.name == None, '*')], else_=Resource.name)
 
         action_agg = func.group_concat(action.distinct())
         resource_agg = func.group_concat(resource.distinct())
 
-        return session.query(domain, action_agg, resource_agg).
-                outerjoin(Action, Permission.action_id == Action.pk_id).
-                outerjoin(Domain, Permission.domain_id == Domain.pk_id).
-                outerjoin(Resource, Permission.resource_id = Resource.pk_id).
+        return session.query(thedomain, action_agg, resource_agg).
+                outerjoin(Action.action).
+                outerjoin(Domain.domain).
+                outerjoin(Resource.resource).
                 group_by(Permission.domain_id, Permission.resource_id)
 """
 SELECT ( CASE WHEN DOMAIN.name IS NULL THEN '*' ELSE DOMAIN.name END )
