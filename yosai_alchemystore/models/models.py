@@ -39,7 +39,7 @@ also known as a flat model
 
 """
 
-
+import itertools
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import (Column, Date, DateTime, ForeignKey, Integer, String,
                         Text, text, Enum, Table)
@@ -73,7 +73,11 @@ class User(Base):
     identifier = Column(String(255), nullable=False, unique=True)
 
     roles = relationship('Role', secondary=role_membership, backref='users')
-    permissions = association_proxy('roles', 'permissions')
+    perms = association_proxy('roles', 'permissions')
+
+    @property
+    def permissions(self):
+        return list(itertools.chain(*self.perms))
 
     def __repr__(self):
         return "User(identifier={0})".format(self.identifier)

@@ -17,13 +17,13 @@ specific language governing permissions and limitations
 under the License.
 """
 
-from .accountstore.meta import (
+from .meta import (
     engine,
     Base,
     Session,
 )
 
-from .accountstore.models import (
+from .models.models import (
     User,
     Domain,
     Action,

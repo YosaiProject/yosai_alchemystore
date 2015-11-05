@@ -30,7 +30,9 @@ actions = [Action(name='write'),
            Action(name='deposit'),
            Action(name='transport'),
            Action(name='access'),
-           Action(name='withdrawal')]
+           Action(name='withdrawal'),
+           Action(name='bowl'),
+           Action(name='run')]
 
 resources = [Resource(name='theringer'),
              Resource(name='ransom'),
@@ -73,7 +75,11 @@ perm5 = Permission(domain=domains['leatherduffelbag'],
 perm6 = Permission(domain=domains['money'],
                    action=actions['withdrawal'])
 
-session.add_all([perm1, perm2, perm3, perm4, perm5, perm6])
+perm7 = Permission(action=actions['bowl'])
+
+perm8 = Permission(action=actions['run'])  # I dont know!?
+
+session.add_all([perm1, perm2, perm3, perm4, perm5, perm6, perm7, perm8])
 
 bankcustomer = roles['bankcustomer']
 courier = roles['courier']
@@ -81,11 +87,12 @@ tenant = roles['tenant']
 landlord = roles['landlord']
 thief = roles['thief']
 
-bankcustomer.permissions.append(perm2)
-courier.permissions.append(perm4)
-tenant.permissions.append(perm1)
-thief.permissions.extend([perm3, perm4, perm5])
-landlord.permissions.append(perm6)
+bankcustomer.permissions.extend([perm2, perm7, perm8])
+courier.permissions.extend([perm4, perm7, perm8])
+tenant.permissions.extend([perm1, perm7, perm8])
+thief.permissions.extend([perm3, perm4, perm5, perm7, perm8])
+landlord.permissions.extend([perm6, perm7, perm8])
+
 thedude = users['Jeffrey_Lebowski']
 thedude.roles.extend([bankcustomer, courier, tenant])
 
@@ -106,6 +113,6 @@ karl.roles.extend([bankcustomer, thief])
 
 session.commit()
 
-pp.pprint(karlpermissions)
+pp.pprint(karl.permissions)
 
 session.close()
