@@ -10,6 +10,8 @@ from yosai_alchemystore import (
     Role,
 )
 
+from sqlalchemy import case, func, distinct
+
 Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 import pprint
@@ -115,4 +117,22 @@ session.commit()
 
 pp.pprint(karl.permissions)
 
+
+def get_permissions_query():
+
+    thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
+    theaction = case([(Action.name == None, '*')], else_=Action.name)
+    theresource = case([(Resource.name == None, '*')], else_=Resource.name)
+
+    action_agg = func.group_concat(theaction.distinct())
+    resource_agg = func.group_concat(theresource.distinct())
+
+    return (session.query(thedomain, action_agg, resource_agg).
+            outerjoin(Action, Permission.action_id == Action.pk_id).
+            outerjoin(Domain, Permission.domain_id == Domain.pk_id).
+            outerjoin(Resource, Permission.resource_id == Resource.pk_id).
+            group_by(Permission.domain_id, Permission.resource_id))
+
+results = get_permissions_query().all()
+print(results)
 session.close()

@@ -34,7 +34,7 @@ from models import (
     RoleMembership,
 )
 
-from sqlalchemy import case
+from sqlalchemy import case, func, distinct
 
 
 class AlchemyAccount:
@@ -80,12 +80,10 @@ class AlchemyAccountStore:
         """
         identifier = authc_token.identifier
 
-        credential_query = session.query(Credential.password).filter(
-            Credential.user_id == identifier)
+        credential_query =
         credential = credential_query.scalar()
 
-        permissions_query = session.query(Permission).
-            join(RolePermission, Permission.pk_id == RolePermission.role_id)
+        permissions_query =
 
         account = AlchemyAccount(account_id=identifier,
                                  credentials=credentials,
@@ -110,7 +108,6 @@ class AlchemyAccountStore:
 
         return account
 
-
     @session_context
     def get_authz_info(self, identifiers):
         """
@@ -133,11 +130,19 @@ class AlchemyAccountStore:
 
     def get_permissions_query(self):
 
-        domain = case([(domain.c.name is None, '*')], else_=domain.c.name)
-        action = case([(action.c.name is None, '*')], else_=action.c.name)
-        resource = case([(resource.c.name is None, '*')], else_=resource.c.name)
+        domain = case([(Domain.name == None, '*')], else_=Domain.name)
+        action = case([(Action.name == None, '*')], else_=Action.name)
+        resource = case([(Resource.name == None, '*')], else_=Resource.name)
 
+        action_agg = func.group_concat(action.distinct())
+        resource_agg = func.group_concat(resource.distinct())
 
+        return session.query(domain, action_agg, resource_agg).
+                outerjoin(Action, Permission.action_id == Action.pk_id).
+                outerjoin(Domain, Permission.domain_id == Domain.pk_id).
+                outerjoin(Resource, Permission.resource_id = Resource.pk_id).
+                group_by(Permission.domain_id, Permission.resource_id)
+"""
 SELECT ( CASE WHEN DOMAIN.name IS NULL THEN '*' ELSE DOMAIN.name END )
         || ':' ||
         group_concat ( DISTINCT ( CASE WHEN ACTION.name IS NULL THEN '*' ELSE ACTION.name END ) )
@@ -151,3 +156,4 @@ FROM
 GROUP BY
     PERMISSION.domain_id,
     PERMISSION.resource_id;
+"""
