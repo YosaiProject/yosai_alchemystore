@@ -100,7 +100,7 @@ class Domain(Base):
     name = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "Domain(name={0})".format(self.name)
+        return "Domain(pk_id={0}, name={1})".format(self.pk_id, self.name)
 
 
 class Action(Base):
@@ -110,7 +110,7 @@ class Action(Base):
     name = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "Action(name={0})".format(self.name)
+        return "Action(pk_id={0}, name={1})".format(self.pk_id, self.name)
 
 
 class Resource(Base):
@@ -120,7 +120,7 @@ class Resource(Base):
     name = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "Resource(name={0})".format(self.name)
+        return "Resource(pk_id={0}, name={1})".format(self.pk_id, self.name)
 
 
 # The Permission orm model will inherit from yosai.DefaultPermission once
@@ -132,6 +132,10 @@ class Permission(Base):
     domain_id = Column(ForeignKey('domain.pk_id'), nullable=True)
     action_id = Column(ForeignKey('action.pk_id'), nullable=True)
     resource_id = Column(ForeignKey('resource.pk_id'), nullable=True)
+
+    domain = relationship('Domain', backref='permission')
+    action = relationship('Action', backref='permission')
+    resource = relationship('Resource', backref='permission')
 
     roles = relationship('Role', secondary=role_permission,
                          backref='permissions')

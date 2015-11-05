@@ -53,6 +53,8 @@ perm1 = Permission(domain=domains['money'],
                    action=actions['write'],
                    resource=resources['bankcheck_19911109069']),
 
+print('\n\n---------------------------', perm1, '\n\n')
+
 perm2 = Permission(domain=domains['money'],
                    action=actions['deposit']),
 
@@ -65,11 +67,13 @@ perm4 = Permission(domain=domains['leatherduffelbag'],
                    resource=resources['theringer']),
 
 perm5 = Permission(domain=domains['leatherduffelbag'],
-                   action=actions['open'],
+                   action=actions['access'],
                    resource=resources['theringer'])
 
 perm6 = Permission(domain=domains['money'],
                    action=actions['withdrawal'])
+session.add_all([perm1, perm2, perm3, perm4, perm5, perm6])
+# session.commit()
 
 bankcustomer = roles['bankcustomer']
 courier = roles['courier']
@@ -77,13 +81,19 @@ tenant = roles['tenant']
 landlord = roles['landlord']
 thief = roles['thief']
 
+print('\n\nbankcustomer: ', bankcustomer)
+print('courier: ', courier)
+print('tenant: ', tenant)
+print('landlord: ', landlord)
+print('thief: ', thief)
+
+session.commit()
 bankcustomer.permissions.append(perm2)
+"""
 courier.permissions.append(perm4)
 tenant.permissions.append(perm1)
 thief.permissions.append(perm3, perm4, perm5)
 landlord.permissions.append(perm6)
-session.commit()
-
 thedude = users['Jeffrey_Lebowski']
 thedude.roles.append(bankcustomer, courier, tenant)
 
@@ -97,10 +107,11 @@ larry = users['Larry_Sellers']
 larry.roles.append(bankcustomer, thief)  # yes, I know, it's not confirmed
 
 jackie = users['Jackie_Treehorn']
-jackie.roles.append(bankcustomer, thief)  # karl may be working for him, close enough
+jackie.roles.append(bankcustomer, thief)  # karl may be working for him-- close enough
 
 karl = users['Karl_Hungus']
 karl.roles.append(bankcustomer, thief)
+"""
 
 session.commit()
 session.close()
