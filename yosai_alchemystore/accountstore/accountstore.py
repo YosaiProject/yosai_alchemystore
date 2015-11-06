@@ -32,6 +32,7 @@ from models import (
     Role,
     role_permission,
     role_membership,
+    authz_abcs,
 )
 
 from sqlalchemy import case, func
@@ -57,7 +58,8 @@ def session_context(fn):
 
 
 # account_abcs.CredentialsAccountStore, account_abcs.AuthorizationAccountStore
-class AlchemyAccountStore:
+class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
+                          authz_abcs.RoleResolverAware):
     """
     AlchemyAccountStore provides the realm-facing API to the relational database
     that is managed through the SQLAlchemy ORM.
@@ -67,8 +69,21 @@ class AlchemyAccountStore:
     step 3:  return results
     """
 
-    def __init__(self, session):
-        pass
+    def __init__(self, permission_resolver=None, role_resolver=None):
+        """
+        Since KeyedTuple permissions records have to be converted to an object
+        that yosai can use, it might as well be actual Permission objects.
+        """
+        self._permission_resolver = None  # setter-injected after init
+        self._role_resolver = None   # setter-injected after init
+
+    @property
+    def permission_resolver(self):
+        return self._permission_resolver
+
+    @permission_resolver.setter
+    def permission_resolver(self, permissionresolver):
+        self._permission_resolver = permissionresolver
 
     def get_permissions_query(self, session, identifier):
         """
@@ -80,8 +95,9 @@ class AlchemyAccountStore:
 
         action_agg = func.group_concat(theaction.distinct())
         resource_agg = func.group_concat(theresource.distinct())
+        perm = (thedomain + ':' + action_agg + ':' + resource_agg).label("perm")
 
-        return (session.query(thedomain + ':' + action_agg + ':' + resource_agg).
+        return (session.query(perm).
                 select_from(User).
                 join(role_membership, User.pk_id == role_membership.c.user_id).
                 join(role_permission, role_membership.c.role_id == role_permission.c.role_id).
@@ -118,9 +134,15 @@ class AlchemyAccountStore:
         """
         identifier = authc_token.identifier
 
-        credential = self.get_credential_query(session, identifier).scalar()
-        permissions = self.get_permissions_query(session, identifier).all()
-        roles = self.get_roles_query(session, identifier).all()
+        credential = (self.get_credential_query(session, identifier).
+                      scalar().credential)
+
+        perms = self.get_permissions_query(session, identifier).all()
+        permissions = {self.permission_resolver(permission=p.perm)
+                       for p in perms}
+
+        roles = {self.role_resolver(title=r.title)
+                 for r in self.get_roles_query(session, identifier).all()}
 
         account = AlchemyAccount(account_id=identifier,
                                  credentials=credential,
@@ -158,11 +180,3 @@ class AlchemyAccountStore:
                                  roles=roles)
 
         return account
-
-    @session_context
-    def get_permissions(self, identifiers):
-        self.handler.get_permissions(identifiers)
-
-    @session_context
-    def get_roles(self, identifiers):
-        self.handler.get_roles(identifiers)
