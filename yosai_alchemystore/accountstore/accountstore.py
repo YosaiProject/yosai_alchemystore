@@ -24,17 +24,18 @@ from accountstore import (
 from models import (
     Party,
     User,
-    Credentials,
+    Credential,
     Domain,
     Action,
     Resource,
     Permission,
     Role,
-    RolePermission,
-    RoleMembership,
+    role_permission,
+    role_membership,
 )
 
-from sqlalchemy import case, func, distinct
+from sqlalchemy import case, func
+import functools
 
 
 class AlchemyAccount:
@@ -49,7 +50,7 @@ def session_context(fn):
     def wrap(*args, **kwargs):
 
         session = Session()
-        fn(session, *args, **kwargs)
+        fn(*args, session=session, **kwargs)
         session.close()
 
     return wrap
@@ -69,8 +70,45 @@ class AlchemyAccountStore:
     def __init__(self, session):
         pass
 
+    def get_permissions_query(self, session, identifier):
+        """
+        :type identifier: string
+        """
+        thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
+        theaction = case([(Action.name == None, '*')], else_=Action.name)
+        theresource = case([(Resource.name == None, '*')], else_=Resource.name)
+
+        action_agg = func.group_concat(theaction.distinct())
+        resource_agg = func.group_concat(theresource.distinct())
+
+        return (session.query(thedomain + ':' + action_agg + ':' + resource_agg).
+                select_from(User).
+                join(role_membership, User.pk_id == role_membership.c.user_id).
+                join(role_permission, role_membership.c.role_id == role_permission.c.role_id).
+                join(Permission, role_permission.c.permission_id == Permission.pk_id).
+                outerjoin(Domain, Permission.domain_id == Domain.pk_id).
+                outerjoin(Action, Permission.action_id == Action.pk_id).
+                outerjoin(Resource, Permission.resource_id == Resource.pk_id).
+                filter(User.identifier == identifier).
+                group_by(Permission.domain_id, Permission.resource_id))
+
+
+    def get_roles_query(self, session, identifier):
+        """
+        :type identifier: string
+        """
+        return (session.query(Role).
+                join(role_membership, Role.pk_id == role_membership.role_id).
+                join(User, role_membership.user_id == User.pk_id).
+                filter(User.identifier == identifier))
+
+    def get_credential_query(self, session, identifier):
+        return (session.query(Credential.password).
+                join(User, Credential.user_id == User.pk_id).
+                filter(User.identifier == identifier))
+
     @session_context
-    def get_account(self, session, authc_token):
+    def get_account(self, authc_token, session=None):
         """
         :param authc_token:  the request object defining the criteria by which
                              to query the account store
@@ -80,44 +118,45 @@ class AlchemyAccountStore:
         """
         identifier = authc_token.identifier
 
-        credential_query =
-        credential = credential_query.scalar()
-
-        permissions_query =
+        credential = self.get_credential_query(session, identifier).scalar()
+        permissions = self.get_permissions_query(session, identifier).all()
+        roles = self.get_roles_query(session, identifier).all()
 
         account = AlchemyAccount(account_id=identifier,
-                                 credentials=credentials,
+                                 credentials=credential,
                                  permissions=permissions,
                                  roles=roles)
 
         return account
 
     @session_context
-    def get_credentials(self, authc_token):
+    def get_credentials(self, authc_token, session=None):
         """
         :returns: Account
         """
-        credentials_query = session.query(Credential.password).filter(
-            Credential.user_id == identifier)
+        identifier = authc_token.identifier
 
-        credentials = credentials_query.scalar()
+        credential = self.get_credential_query(session, identifier).scalar()
 
-        credentials = self.handler.get_credentials(...)
-        account = Account(account_id=account_id,
-                          credentials=credentials)
+        account = AlchemyAccount(account_id=identifier,
+                                 credentials=credential)
 
         return account
 
     @session_context
-    def get_authz_info(self, identifiers):
+    def get_authz_info(self, identifier, session=None):
         """
         :returns: Account
         """
-        permissions = self.get_permissions(identifiers)
-        roles = self.get_roles(identifiers)
-        account = Account(account_id=account_id,
-                          permissions=privileges,
-                          roles=roles)
+        identifier = authc_token.identifier
+
+        permissions = self.get_permissions_query(session, identifier).all()
+        roles = self.get_roles_query(session, identifier).all()
+
+        account = AlchemyAccount(account_id=identifier,
+                                 permissions=permissions,
+                                 roles=roles)
+
         return account
 
     @session_context
@@ -127,33 +166,3 @@ class AlchemyAccountStore:
     @session_context
     def get_roles(self, identifiers):
         self.handler.get_roles(identifiers)
-
-    def get_permissions_query(self):
-
-        thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
-        action = case([(Action.name == None, '*')], else_=Action.name)
-        resource = case([(Resource.name == None, '*')], else_=Resource.name)
-
-        action_agg = func.group_concat(action.distinct())
-        resource_agg = func.group_concat(resource.distinct())
-
-        return session.query(thedomain, action_agg, resource_agg).
-                outerjoin(Action.action).
-                outerjoin(Domain.domain).
-                outerjoin(Resource.resource).
-                group_by(Permission.domain_id, Permission.resource_id)
-"""
-SELECT ( CASE WHEN DOMAIN.name IS NULL THEN '*' ELSE DOMAIN.name END )
-        || ':' ||
-        group_concat ( DISTINCT ( CASE WHEN ACTION.name IS NULL THEN '*' ELSE ACTION.name END ) )
-        || ':' ||
-        group_concat ( DISTINCT ( CASE WHEN RESOURCE.name IS NULL THEN '*' ELSE RESOURCE.name END ) ) AS PERMISSION
-FROM
-    PERMISSION
-    LEFT OUTER JOIN ACTION ON PERMISSION.action_id = ACTION.pk_id
-    LEFT OUTER JOIN DOMAIN ON PERMISSION.domain_id = DOMAIN.pk_id
-    LEFT OUTER JOIN RESOURCE ON PERMISSION.resource_id = RESOURCE.pk_id
-GROUP BY
-    PERMISSION.domain_id,
-    PERMISSION.resource_id;
-"""

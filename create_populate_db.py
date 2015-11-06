@@ -8,6 +8,8 @@ from yosai_alchemystore import (
     Resource,
     Permission,
     Role,
+    role_membership,
+    role_permission,
 )
 
 from sqlalchemy import case, func, distinct
@@ -117,9 +119,10 @@ session.commit()
 
 pp.pprint(karl.permissions)
 
-
-def get_permissions_query():
-
+def get_permissions_query(session, identifier_s):
+    """
+    :type identifier_s: list
+    """
     thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
     theaction = case([(Action.name == None, '*')], else_=Action.name)
     theresource = case([(Resource.name == None, '*')], else_=Resource.name)
@@ -127,12 +130,17 @@ def get_permissions_query():
     action_agg = func.group_concat(theaction.distinct())
     resource_agg = func.group_concat(theresource.distinct())
 
-    return (session.query(Permission.domain_id, thedomain, action_agg, resource_agg).
+    return (session.query(thedomain + ':' + action_agg + ':' + resource_agg).
+            select_from(User).
+            join(role_membership, User.pk_id == role_membership.c.user_id).
+            join(role_permission, role_membership.c.role_id == role_permission.c.role_id).
+            join(Permission, role_permission.c.permission_id == Permission.pk_id).
             outerjoin(Domain, Permission.domain_id == Domain.pk_id).
             outerjoin(Action, Permission.action_id == Action.pk_id).
             outerjoin(Resource, Permission.resource_id == Resource.pk_id).
+            filter(User.identifier.in_(identifier_s)).
             group_by(Permission.domain_id, Permission.resource_id))
 
-result = get_permissions_query().all()
+result = get_permissions_query(session, ['walter']).all()
 pp.pprint(result)
 session.close()

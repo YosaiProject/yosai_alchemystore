@@ -30,4 +30,6 @@ from .models.models import (
     Resource,
     Permission,
     Role,
+    role_membership,
+    role_permission,
 )
