@@ -17,6 +17,8 @@ specific language governing permissions and limitations
 under the License.
 """
 
+__version__ = '0.1.0'
+
 from .meta import (
     engine,
     Base,
@@ -24,6 +26,7 @@ from .meta import (
 )
 
 from .models.models import (
+    Credential,
     User,
     Domain,
     Action,
