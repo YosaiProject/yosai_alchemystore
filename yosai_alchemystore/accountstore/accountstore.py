@@ -16,11 +16,11 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-from ..meta import (
+from yosai_alchemystore import (
     Session,
 )
 
-from ..models.models import (
+from yosai_alchemystore.models.models import (
     Credential as CredentialModel,
     User as UserModel,
     Domain as DomainModel,

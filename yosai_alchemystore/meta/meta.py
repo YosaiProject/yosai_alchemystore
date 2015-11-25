@@ -20,9 +20,12 @@ under the License.
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
+from yosai_alchemystore import AccountStoreSettings
 
 Base = declarative_base()
 
-engine = create_engine("sqlite:///yosai.db", echo=True)
+url = AccountStoreSettings().url
+
+engine = create_engine(url, echo=True)
 
 Session = sessionmaker(bind=engine)

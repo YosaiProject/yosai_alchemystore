@@ -1,0 +1,9 @@
+---
+ENGINE_CONFIG: 
+    dialect:  sqlite
+    path: '///yosai_accounts.db'
+    userid:
+    password:
+    hostname:
+    port:
+    db:
