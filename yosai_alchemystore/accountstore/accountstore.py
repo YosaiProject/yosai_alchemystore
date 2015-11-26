@@ -36,6 +36,7 @@ from yosai import (
     Account,
     account_abcs,
     authz_abcs,
+    InvalidArgumentException,
 )
 
 from sqlalchemy import case, func
@@ -59,7 +60,7 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
                           authz_abcs.PermissionResolverAware,
                           authz_abcs.RoleResolverAware,
                           authz_abcs.CredentialResolverAware,
-                          account_abcs.CredentialAccountStore,
+                          account_abcs.CredentialsAccountStore,
                           account_abcs.AuthorizationAccountStore):
     """
     AccountStore provides the realm-facing API to the relational database
@@ -150,16 +151,17 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
                 filter(UserModel.identifier == identifier))
 
     @session_context
-    def get_credentials(self, authc_token, session=None):
+    def get_credentials(self, identifier, session=None):
         """
         :returns: Account
         """
-        identifier = authc_token.identifier
-
         credential = self.get_credential_query(session, identifier).scalar()
 
+        if credential is None:
+            return None
+
         account = Account(account_id=identifier,
-                          credentials=credential)
+                          credentials=self.credential_resolver(credential))
 
         return account
 
@@ -169,13 +171,22 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
         :returns: Account
         """
 
-        perms = self.get_permissions_query(session, identifier).all()
+        try:
+            perms = self.get_permissions_query(session, identifier).all()
 
-        permissions = {self.permission_resolver(permission=p.perm)
-                       for p in perms}
+            permissions = {self.permission_resolver(permission=p.perm)
+                           for p in perms}
+        except (AttributeError, TypeError):
+            permissions = None
 
-        roles = {self.role_resolver(r.title)
-                 for r in self.get_roles_query(session, identifier).all()}
+        try:
+            roles = {self.role_resolver(r.title)
+                     for r in self.get_roles_query(session, identifier).all()}
+        except (AttributeError, TypeError):
+            roles = None
+
+        if not permissions and not roles:
+            return None
 
         authz_info = self.authz_info_resolver(roles=roles,
                                               permissions=permissions)
