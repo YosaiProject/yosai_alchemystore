@@ -34,6 +34,7 @@ from yosai_alchemystore.models.models import (
 
 from yosai import (
     Account,
+    account_abcs,
     authz_abcs,
 )
 
@@ -54,9 +55,12 @@ def session_context(fn):
     return wrap
 
 
-# account_abcs.CredentialModelsAccountStore, account_abcs.AuthorizationAccountStore
-class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
-                          authz_abcs.RoleResolverAware):
+class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
+                          authz_abcs.PermissionResolverAware,
+                          authz_abcs.RoleResolverAware,
+                          authz_abcs.CredentialResolverAware,
+                          account_abcs.CredentialAccountStore,
+                          account_abcs.AuthorizationAccountStore):
     """
     AccountStore provides the realm-facing API to the relational database
     that is managed through the SQLAlchemy ORM.
@@ -71,8 +75,18 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
         Since KeyedTuple permissions records have to be converted to an object
         that yosai can use, it might as well be actual PermissionModel objects.
         """
+        self._authz_info_resolver = None
         self._permission_resolver = None  # setter-injected after init
         self._role_resolver = None   # setter-injected after init
+        self._credential_resolver = None    # setter-injected after init
+
+    @property
+    def authz_info_resolver(self):
+        return self._authz_info_resolver
+
+    @authz_info_resolver.setter
+    def authz_info_resolver(self, authz_info_resolver):
+        self._authz_info_resolver = authz_info_resolver
 
     @property
     def permission_resolver(self):
@@ -89,6 +103,14 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
     @role_resolver.setter
     def role_resolver(self, roleresolver):
         self._role_resolver = roleresolver
+
+    @property
+    def credential_resolver(self):
+        return self._credential_resolver
+
+    @credential_resolver.setter
+    def credential_resolver(self, credentialresolver):
+        self._credential_resolver = credentialresolver
 
     def get_permissions_query(self, session, identifier):
         """
@@ -128,34 +150,6 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
                 filter(UserModel.identifier == identifier))
 
     @session_context
-    def get_account(self, authc_token, session=None):
-        """
-        :param authc_token:  the request object defining the criteria by which
-                             to query the account store
-        :type authc_token:  AuthenticationToken
-
-        :returns: Account
-        """
-        identifier = authc_token.identifier
-
-        credential = (self.get_credential_query(session, identifier).
-                      scalar())
-
-        perms = self.get_permissions_query(session, identifier).all()
-        permissions = {self.permission_resolver(permission=p.perm)
-                       for p in perms}
-
-        roles = {self.role_resolver(r.title)
-                 for r in self.get_roles_query(session, identifier).all()}
-
-        account = Account(account_id=identifier,
-                          credentials=credential,
-                          permissions=permissions,
-                          roles=roles)
-
-        return account
-
-    @session_context
     def get_credentials(self, authc_token, session=None):
         """
         :returns: Account
@@ -183,8 +177,49 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
         roles = {self.role_resolver(r.title)
                  for r in self.get_roles_query(session, identifier).all()}
 
+        authz_info = self.authz_info_resolver(roles=roles,
+                                              permissions=permissions)
+
         account = Account(account_id=identifier,
-                          permissions=permissions,
-                          roles=roles)
+                          authz_info=authz_info)
 
         return account
+
+#    @session_context
+#    def get_account(self, identifier, session=None):
+#        """
+#        get_account performs the most comprehensive collection of information
+#        from the database, including credentials AND authorization information
+#
+#        :param identifier:  the request object's identifier
+#        :returns: Account
+#
+#        CAUTION
+#        --------
+#        This method was initially created as part of shiro porting but is
+#        not intended for v0.1.0 use due to lack of support for get_or_create_multi
+#        dogpile locking. If you would like to use get_account, you *should*
+#        implement an appropriate get_or_create_multi caching process (and submit
+#        the changes as pull requests to yosai!).  Without dogpile protection,
+#        you run the risk of concurrently calling the most expensive creational
+#        process
+#
+#        """
+#        cred = self.get_credential_query(session, identifier).scalar()
+#        credential = self.credential_resolver(cred)
+#
+#        roles = {self.role_resolver(r.title)
+#                 for r in self.get_roles_query(session, identifier).all()}
+#
+#        perms = self.get_permissions_query(session, identifier).all()
+#        permissions = {self.permission_resolver(permission=p.perm)
+#                       for p in perms}
+#
+#        authz_info = self.authz_info_resolver(roles=roles,
+#                                              permissions=permissions)
+#
+#        account = Account(account_id=identifier,
+#                          credentials=credential,
+#                          authz_info=authz_info)
+#
+#        return account
