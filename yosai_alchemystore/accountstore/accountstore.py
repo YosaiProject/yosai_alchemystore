@@ -32,7 +32,7 @@ from yosai_alchemystore.models.models import (
     role_permission as role_permission_table,
 )
 
-from yosai import (
+from yosai.core import (
     Account,
     account_abcs,
     authz_abcs,
@@ -155,13 +155,13 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
         """
         :returns: Account
         """
-        credential = self.get_credential_query(session, identifier).scalar()
+        credentials = self.get_credential_query(session, identifier).scalar()
 
-        if credential is None:
+        if credentials is None:
             return None
 
         account = Account(account_id=identifier,
-                          credentials=self.credential_resolver(credential))
+                          credentials=self.credential_resolver(credentials))
 
         return account
 
