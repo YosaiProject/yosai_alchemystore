@@ -25,7 +25,7 @@ also known as a flat model
 +-----------------+          +-------------------+          +---------------+
 |                 |          |                   |          |               |
 |                 |          |    R o l e        |          |               |
-|    R o l e      +----------+    Permission     +----------+   Permission  |
+|    R o l e      +----------+    PermissionModel     +----------+   PermissionModel  |
 |                 |          |                   |          |               |
 +-----------------+          +-------------------+          +---------------+
 
@@ -49,8 +49,6 @@ from yosai_alchemystore import (
     Base
 )
 
-# from yosai.core import DefaultPermission, SimpleRole
-
 role_permission = Table(
     'role_permission', Base.metadata,
     Column('role_id', ForeignKey('role.pk_id'), primary_key=True),
@@ -64,7 +62,7 @@ role_membership = Table(
 )
 
 
-class User(Base):
+class UserModel(Base):
     __tablename__ = 'user'
 
     pk_id = Column(Integer, primary_key=True)
@@ -72,7 +70,12 @@ class User(Base):
     last_name = Column(String(255), nullable=False)
     identifier = Column(String(255), nullable=False, unique=True)
 
-    roles = relationship('Role', secondary=role_membership, backref='users')
+    roles = relationship('RoleModel', 
+                         secondary=role_membership, 
+                         backref='users',
+                         cascade="all, delete-orphan",
+                         single_parent=True)
+
     perms = association_proxy('roles', 'permissions')
 
     @property
@@ -80,56 +83,57 @@ class User(Base):
         return list(itertools.chain(*self.perms))
 
     def __repr__(self):
-        return "User(identifier={0})".format(self.identifier)
+        return "UserModel(identifier={0})".format(self.identifier)
 
 
-class Credential(Base):
+class CredentialModel(Base):
     __tablename__ = 'credential'
 
     pk_id = Column(Integer, primary_key=True)
     user_id = Column(ForeignKey('user.pk_id'), nullable=False, unique=True)
-    credential = Column(Text, nullable=False)
+    credential = Column(String, nullable=False)
     expiration_dt = Column(DateTime(timezone=True), nullable=False)
 
-    user = relationship('User', backref='credential')
+    user = relationship('UserModel', 
+                        backref='credential',
+                        cascade="all, delete-orphan",
+                        single_parent=True)
 
     def __repr__(self):
-        return "Credentials(user_id={0})".format(self.user_id)
+        return "CredentialModel(user_id={0})".format(self.user_id)
 
 
-class Domain(Base):
+class DomainModel(Base):
     __tablename__ = 'domain'
 
     pk_id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "Domain(pk_id={0}, name={1})".format(self.pk_id, self.name)
+        return "DomainModel(pk_id={0}, name={1})".format(self.pk_id, self.name)
 
 
-class Action(Base):
+class ActionModel(Base):
     __tablename__ = 'action'
 
     pk_id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "Action(pk_id={0}, name={1})".format(self.pk_id, self.name)
+        return "ActionModel(pk_id={0}, name={1})".format(self.pk_id, self.name)
 
 
-class Resource(Base):
+class ResourceModel(Base):
     __tablename__ = 'resource'
 
     pk_id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "Resource(pk_id={0}, name={1})".format(self.pk_id, self.name)
+        return "ResourceModel(pk_id={0}, name={1})".format(self.pk_id, self.name)
 
 
-# The Permission orm model will inherit from yosai.DefaultPermission once
-# preliminary testing is finished:
-class Permission(Base):
+class PermissionModel(Base):
     __tablename__ = 'permission'
 
     pk_id = Column(Integer, primary_key=True)
@@ -137,26 +141,40 @@ class Permission(Base):
     action_id = Column(ForeignKey('action.pk_id'), nullable=True)
     resource_id = Column(ForeignKey('resource.pk_id'), nullable=True)
 
-    domain = relationship('Domain', backref='permission')
-    action = relationship('Action', backref='permission')
-    resource = relationship('Resource', backref='permission')
+    domain = relationship('DomainModel', 
+                          backref='permission',
+                          cascade="all, delete-orphan",
+                          single_parent=True)
+                          
+    action = relationship('ActionModel', 
+                          backref='permission',
+                          cascade="all, delete-orphan",
+                          single_parent=True)
+                          
+    resource = relationship('ResourceModel', 
+                            backref='permission',
+                            cascade="all, delete-orphan",
+                            single_parent=True)
 
-    roles = relationship('Role', secondary=role_permission,
-                         backref='permissions')
+    roles = relationship('RoleModel', secondary=role_permission,
+                         backref='permissions',
+                         cascade="all, delete-orphan",
+                         single_parent=True)
+
     users = association_proxy('roles', 'users')
 
     def __repr__(self):
-        return ("Permission(domain_id={0},action_id={1},resource_id={2})".
+        return ("PermissionModel(domain_id={0},action_id={1},resource_id={2})".
                 format(self.domain_id, self.action_id, self.resource_id))
 
 
-# The Role orm model will inherit from yosai.SimpleRole once
+# The RoleModel orm model will inherit from yosai.SimpleRoleModel once
 # preliminary testing is finished:
-class Role(Base):
+class RoleModel(Base):
     __tablename__ = 'role'
 
     pk_id = Column(Integer, primary_key=True)
     title = Column(String(100))
 
     def __repr__(self):
-        return "Role(title={0})".format(self.title)
+        return "RoleModel(title={0})".format(self.title)

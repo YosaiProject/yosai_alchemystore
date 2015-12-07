@@ -21,19 +21,20 @@ from yosai_alchemystore import (
 )
 
 from yosai_alchemystore.models.models import (
-    Credential as CredentialModel,
-    User as UserModel,
-    Domain as DomainModel,
-    Action as ActionModel,
-    Resource as ResourceModel,
-    Permission as PermissionModel,
-    Role as RoleModel,
+    CredentialModel,
+    UserModel,
+    DomainModel,
+    ActionModel,
+    ResourceModel,
+    PermissionModel,
+    RoleModel,
     role_membership as role_membership_table,
     role_permission as role_permission_table,
 )
 
 from yosai.core import (
     Account,
+    Credential,
     account_abcs,
     authz_abcs,
     InvalidArgumentException,
@@ -41,6 +42,7 @@ from yosai.core import (
 
 from sqlalchemy import case, func
 import functools
+import pdb
 
 
 def session_context(fn):
@@ -155,13 +157,11 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
         """
         :returns: Account
         """
-        credentials = self.get_credential_query(session, identifier).scalar()
-
+        creds = self.get_credential_query(session, identifier).scalar()
+        credentials = self.credential_resolver.resolve(creds)
         if credentials is None:
             return None
-
-        account = Account(account_id=identifier,
-                          credentials=self.credential_resolver(credentials))
+        account = Account(account_id=identifier, credentials=credentials)
 
         return account
 
