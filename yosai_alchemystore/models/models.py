@@ -72,9 +72,7 @@ class UserModel(Base):
 
     roles = relationship('RoleModel',
                          secondary=role_membership,
-                         backref='users',
-                         cascade="all, delete-orphan",
-                         single_parent=True)
+                         backref='users')
 
     perms = association_proxy('roles', 'permissions')
 
