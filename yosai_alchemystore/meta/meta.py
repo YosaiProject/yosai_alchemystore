@@ -24,8 +24,9 @@ from yosai_alchemystore import AccountStoreSettings
 
 Base = declarative_base()
 
-url = AccountStoreSettings().url
+settings = AccountStoreSettings()
+url = settings.url
 
-engine = create_engine(url, echo=True)
+engine = create_engine(url, echo=settings.echo)
 
 Session = sessionmaker(bind=engine)

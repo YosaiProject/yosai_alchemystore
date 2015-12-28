@@ -37,6 +37,8 @@ class AccountStoreSettings:
         port = engine_config.get('port', None)
         db = engine_config.get('db', None)
 
+        self.echo = engine_config.get('echo', False)
+
         self.url = "{dialect}:{path}{userid}{idpasspath}{password}{hostnamepath}{hostname}{portpath}{port}{dbpath}{db}".\
             format(dialect=dialect,
                    path=path,
