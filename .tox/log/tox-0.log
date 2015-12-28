@@ -1,0 +1,87 @@
+actionid: tox
+msg: packaging
+cmdargs: ['/home/dowwie/yosai/venv35/bin/python3.5', local('/home/dowwie/yosai_alchemystore/setup.py'), 'sdist', '--formats=zip', '--dist-dir', local('/home/dowwie/yosai_alchemystore/.tox/dist')]
+env: None
+
+running sdist
+running egg_info
+creating yosai_alchemystore.egg-info
+writing top-level names to yosai_alchemystore.egg-info/top_level.txt
+writing yosai_alchemystore.egg-info/PKG-INFO
+writing dependency_links to yosai_alchemystore.egg-info/dependency_links.txt
+writing manifest file 'yosai_alchemystore.egg-info/SOURCES.txt'
+reading manifest file 'yosai_alchemystore.egg-info/SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+warning: no files found matching '*.html' under directory 'doc'
+warning: no files found matching '*.css' under directory 'doc'
+warning: no files found matching '*.txt' under directory 'doc'
+warning: no files found matching '*.js' under directory 'doc'
+warning: no files found matching '*.jpg' under directory 'doc'
+warning: no files found matching '*.png' under directory 'doc'
+warning: no files found matching '*.py' under directory 'doc'
+warning: no files found matching 'Makefile' under directory 'doc'
+warning: no files found matching '*.rst' under directory 'doc'
+warning: no files found matching '*.sty' under directory 'doc'
+warning: no files found matching '*.py' under directory 'test'
+warning: no files found matching 'distribute_setup.py'
+warning: no files found matching 'CHANGES*'
+warning: no files found matching 'test.cfg'
+no previously-included directories found matching 'doc/build/output'
+writing manifest file 'yosai_alchemystore.egg-info/SOURCES.txt'
+warning: sdist: standard file not found: should have one of README, README.rst, README.txt
+
+running check
+creating yosai_alchemystore-0.1.0
+creating yosai_alchemystore-0.1.0/yosai_alchemystore
+creating yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info
+creating yosai_alchemystore-0.1.0/yosai_alchemystore/accountstore
+creating yosai_alchemystore-0.1.0/yosai_alchemystore/conf
+creating yosai_alchemystore-0.1.0/yosai_alchemystore/meta
+creating yosai_alchemystore-0.1.0/yosai_alchemystore/models
+making hard links in yosai_alchemystore-0.1.0...
+hard linking LICENSE -> yosai_alchemystore-0.1.0
+hard linking MANIFEST.in -> yosai_alchemystore-0.1.0
+hard linking README.md -> yosai_alchemystore-0.1.0
+hard linking setup.cfg -> yosai_alchemystore-0.1.0
+hard linking setup.py -> yosai_alchemystore-0.1.0
+hard linking yosai_alchemystore/__init__.py -> yosai_alchemystore-0.1.0/yosai_alchemystore
+hard linking yosai_alchemystore/create_populate_db.py -> yosai_alchemystore-0.1.0/yosai_alchemystore
+hard linking yosai_alchemystore.egg-info/PKG-INFO -> yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info
+hard linking yosai_alchemystore.egg-info/SOURCES.txt -> yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info
+hard linking yosai_alchemystore.egg-info/dependency_links.txt -> yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info
+hard linking yosai_alchemystore.egg-info/not-zip-safe -> yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info
+hard linking yosai_alchemystore.egg-info/top_level.txt -> yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info
+hard linking yosai_alchemystore/accountstore/__init__.py -> yosai_alchemystore-0.1.0/yosai_alchemystore/accountstore
+hard linking yosai_alchemystore/accountstore/accountstore.py -> yosai_alchemystore-0.1.0/yosai_alchemystore/accountstore
+hard linking yosai_alchemystore/conf/__init__.py -> yosai_alchemystore-0.1.0/yosai_alchemystore/conf
+hard linking yosai_alchemystore/conf/settings.py -> yosai_alchemystore-0.1.0/yosai_alchemystore/conf
+hard linking yosai_alchemystore/meta/__init__.py -> yosai_alchemystore-0.1.0/yosai_alchemystore/meta
+hard linking yosai_alchemystore/meta/meta.py -> yosai_alchemystore-0.1.0/yosai_alchemystore/meta
+hard linking yosai_alchemystore/models/__init__.py -> yosai_alchemystore-0.1.0/yosai_alchemystore/models
+hard linking yosai_alchemystore/models/models.py -> yosai_alchemystore-0.1.0/yosai_alchemystore/models
+copying setup.cfg -> yosai_alchemystore-0.1.0
+Writing yosai_alchemystore-0.1.0/setup.cfg
+creating .tox/dist
+creating '.tox/dist/yosai_alchemystore-0.1.0.zip' and adding 'yosai_alchemystore-0.1.0' to it
+adding 'yosai_alchemystore-0.1.0/setup.py'
+adding 'yosai_alchemystore-0.1.0/setup.cfg'
+adding 'yosai_alchemystore-0.1.0/PKG-INFO'
+adding 'yosai_alchemystore-0.1.0/README.md'
+adding 'yosai_alchemystore-0.1.0/MANIFEST.in'
+adding 'yosai_alchemystore-0.1.0/LICENSE'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info/not-zip-safe'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info/PKG-INFO'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info/SOURCES.txt'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info/dependency_links.txt'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore.egg-info/top_level.txt'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/create_populate_db.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/__init__.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/models/models.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/models/__init__.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/conf/settings.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/conf/__init__.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/accountstore/__init__.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/accountstore/accountstore.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/meta/meta.py'
+adding 'yosai_alchemystore-0.1.0/yosai_alchemystore/meta/__init__.py'
+removing 'yosai_alchemystore-0.1.0' (and everything under it)
