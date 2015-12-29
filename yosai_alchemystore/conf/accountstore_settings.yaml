@@ -1,10 +1,10 @@
 ---
 ENGINE_CONFIG: 
     dialect:  sqlite
-    path: '////home/dowwie/yosai_alchemystore/yosai_alchemystore/conf/yosai_accounts.db'
+    path: '////location/to/your/sqlitedatabase.db'
     userid:
     password:
     hostname:
     port:
     db:
-    echo: True 
+    echo: False 
