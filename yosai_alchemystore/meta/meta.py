@@ -18,15 +18,48 @@ under the License.
 """
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from yosai_alchemystore import AccountStoreSettings
 
 Base = declarative_base()
 
-settings = AccountStoreSettings()
-url = settings.url
 
-engine = create_engine(url, echo=settings.echo)
+def init_engine(db_url=None, echo=False):
+    """
 
-Session = sessionmaker(bind=engine)
+    You can configure the engine in two ways:
+        1) YAML config:
+            I) create a yaml config file whose contents is used to construct a
+            'Database URL' connection string as supported by SQLAlchemy
+            II) define an environment variable, "YOSAI_ALCHEMYSTORE_SETTINGS",
+                that points to the location of the config file
+
+        2) pass the engine configuration as a string that is in the
+           'Database URL' format as supported by SQLAlchemy:
+            http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+
+    When a 'Database URL' string isn't passed, the YAML configuration approach
+    is attempted by default.
+
+    :type db_url: string
+    :type echo: bool
+    """
+    if db_url is None:
+        settings = AccountStoreSettings()
+        url = settings.url
+    else:
+        url = db_url
+
+    engine = create_engine(url, echo=echo)
+    return engine
+
+
+def init_session(db_url=None, echo=False, engine=None):
+    """
+    A SQLAlchemy Session requires that an engine be initialized if one isn't
+    provided.
+    """
+    if engine is None:
+        engine = init_engine(db_url=db_url, echo=echo)
+    return sessionmaker(bind=engine)

@@ -1,7 +1,7 @@
 from yosai_alchemystore import (
-    engine,
+    init_engine,
+    init_session,
     Base,
-    Session
 )
 
     
@@ -19,10 +19,13 @@ from yosai_alchemystore.models.models import (
 import datetime
 from sqlalchemy import case, func, distinct
 from passlib.context import CryptContext
+engine = init_engine()
 Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 import pprint
 pp = pprint.PrettyPrinter(indent=1)
+
+Session = init_session()
 
 # Please watch 'The Big Lebowski' so that you may understand the following data.
 users = [UserModel(first_name='Jeffrey', last_name='Lebowski', identifier='thedude'),

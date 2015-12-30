@@ -41,9 +41,8 @@ also known as a flat model
 
 import itertools
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy import (Column, Date, DateTime, ForeignKey, Integer, String,
-                        Text, text, Enum, Table)
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy.orm import relationship
 
 from yosai_alchemystore import (
     Base

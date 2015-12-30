@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 from yosai_alchemystore import (
-    Session,
+    init_session
 )
 
 from yosai_alchemystore.models.models import (
@@ -41,7 +41,7 @@ from yosai.core import (
 
 from sqlalchemy import case, func
 import functools
-import pdb
+
 
 def session_context(fn):
     """
@@ -49,7 +49,7 @@ def session_context(fn):
     """
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
-        session = Session()
+        session = args[0].Session()  # obtain from self
         result = fn(*args, session=session, **kwargs)
         session.close()
         return result
@@ -71,15 +71,21 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
     step 3:  return results
     """
 
-    def __init__(self):
+    def __init__(self, db_url=None, session=None):
         """
-        Since KeyedTuple permissions records have to be converted to an object
-        that yosai can use, it might as well be actual PermissionModel objects.
+        :param db_url: engine configuration that is in the
+                       'Database URL' format as supported by SQLAlchemy:
+            http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+        :type db_url: string
         """
         self._authz_info_resolver = None
         self._permission_resolver = None  # setter-injected after init
         self._role_resolver = None   # setter-injected after init
         self._credential_resolver = None    # setter-injected after init
+        if session is None:
+            self.Session = init_session(db_url)
+        else:
+            self.Session = session
 
     @property
     def authz_info_resolver(self):

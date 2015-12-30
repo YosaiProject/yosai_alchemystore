@@ -5,12 +5,11 @@ from .conf.settings import (
 )
 
 from .meta.meta import (
-    engine,
     Base,
-    Session,
+    init_engine,
+    init_session,
 )
 
 from .accountstore.accountstore import (
     AlchemyAccountStore,
 )
-
