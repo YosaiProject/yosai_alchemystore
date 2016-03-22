@@ -23,7 +23,7 @@ and a request method to obtain Account authorization information (roles and perm
 ## Data Models
 
 Following is the database schema used to facilitate a simple, "flat" Role Based Access Control (RBAC) authorization policy.  This data model enables the most basic form of RBAC.
-![](/doc/db_schema.svg)
+![](/doc/db_schema.png)
 
 
 ## Dev Status:  as of v0.0.5
