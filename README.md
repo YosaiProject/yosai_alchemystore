@@ -1,2 +1,32 @@
-# Yosai Alchemy Store 
-SQLAlchemy-enabled Account Store for Yosai that features a flat Role-Based Access Control (RBAC) data model
+# Yosai AlchemyStore
+
+This is an *extension* project for [Yosai](http://www.github.com/yosaiproject/yosai) that features a complete ``AccountStore`` data store solution intended for quick-start projects using Yosai.
+
+An ``AccountStore`` is a data access object (DAO) that provides an interface to
+a datastore, in this case a relational database.  YosaiAlchemyStore is named as such
+to indicate its use of the [SQLAlchemy](http://www.sqlalchemy.org) library to enable all RDBMS connectivity.
+
+
+# Installation
+
+Install YosaiAlchemyStore from PyPI using pip:
+    ``pip install yosai_alchemystore``
+
+
+## API
+
+The ``AccountStore`` API consists of two abstract base classes within the ``yosai.core.account.abcs`` module.
+It's a simple API, consisting of a request method to obtain Account credentials (passwords)
+and a request method to obtain Account authorization information (roles and permissions).
+
+
+## Data Models
+
+Following is the database schema used to facilitate a simple, "flat" Role Based Access Control (RBAC) authorization policy.  This data model enables the most basic form of RBAC.
+![](/doc/db_schema.svg)
+
+
+## Dev Status:  as of v0.0.5
+
+The project has been released after being tested as part of yosai integrated testing.
+Unit tests are pending development.
