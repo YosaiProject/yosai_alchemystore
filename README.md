@@ -13,6 +13,22 @@ Install YosaiAlchemyStore from PyPI using pip:
     ``pip install yosai_alchemystore``
 
 
+## Setup
+
+An AlchemyAccountStore can be configured through one of two ways:
+
+* Option 1: YAML Config File
+    1. Define a system environment variable, YOSAI_ALCHEMYSTORE_SETTINGS, that points to 
+       the location of alchemystore_settings.yaml file and ensure that the file
+       permissions make it readable.
+    
+    2. Instantiate an AlchemyAccountStore without arguments.  
+
+* Option 2: Passing a dburl argument
+    - instantiate an AlchemyAccountStore, passing a "dburl" argument as
+      defined by SQLAlchemy:  http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+
+
 ## API
 
 The ``AccountStore`` API consists of two abstract base classes within the ``yosai.core.account.abcs`` module.
