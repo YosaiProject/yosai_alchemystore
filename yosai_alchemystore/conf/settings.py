@@ -17,37 +17,40 @@ specific language governing permissions and limitations
 under the License.
 """
 
-from yosai.core import (
-    LazySettings,
-)
+from yosai.core import MisconfiguredException
 
 
 class AccountStoreSettings:
 
-    def __init__(self):
+    def __init__(self, settings):
+        try:
+            account_store_config = settings.ALCHEMY_STORE
 
-        account_store_config = LazySettings("YOSAI_ALCHEMYSTORE_SETTINGS")
+            engine_config = account_store_config['engine_config']
+            dialect = engine_config['dialect']
+            path = engine_config['path']
+            userid = engine_config.get('userid')
+            password = engine_config.get('password')
+            hostname = engine_config.get('hostname')
+            port = engine_config.get('port')
+            db = engine_config.get('db')
 
-        engine_config = account_store_config.ENGINE_CONFIG
-        dialect = engine_config.get('dialect', None)
-        path = engine_config.get('path', None)
-        userid = engine_config.get('userid', None)
-        password = engine_config.get('password', None)
-        hostname = engine_config.get('hostname', None) 
-        port = engine_config.get('port', None)
-        db = engine_config.get('db', None)
+            self.echo = engine_config.get('echo', False)
 
-        self.echo = engine_config.get('echo', False)
+            self.url = "{dialect}:{path}{userid}{idpasspath}{password}{hostnamepath}{hostname}{portpath}{port}{dbpath}{db}".\
+                format(dialect=dialect,
+                       path=path,
+                       userid=userid if userid is not None else '',
+                       idpasspath=':' if userid and password else '',
+                       password=password if password is not None else '',
+                       hostnamepath='@' if hostname is not None else '',
+                       hostname=hostname if hostname is not None else '',
+                       portpath=':' if port is not None else '',
+                       port=port if port is not None else '',
+                       dbpath='/' if db else '',
+                       db=db if db is not None else '')
 
-        self.url = "{dialect}:{path}{userid}{idpasspath}{password}{hostnamepath}{hostname}{portpath}{port}{dbpath}{db}".\
-            format(dialect=dialect,
-                   path=path,
-                   userid=userid if userid is not None else '',
-                   idpasspath=':' if userid and password else '',
-                   password=password if password is not None else '',
-                   hostnamepath='@' if hostname is not None else '',
-                   hostname=hostname if hostname is not None else '',
-                   portpath=':' if port is not None else '',
-                   port=port if port is not None else '',
-                   dbpath='/' if db else '',
-                   db=db if db is not None else '')
+        except (AttributeError, TypeError):
+            msg = ('yosai_alchemystore AlchemyStoreSettings requires a LazySettings instance '
+                   'with complete ALCHEMY_STORE settings')
+            raise MisconfiguredException(msg)

@@ -71,7 +71,7 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
     step 3:  return results
     """
 
-    def __init__(self, db_url=None, session=None):
+    def __init__(self, db_url=None, session=None, settings=None):
         """
         :param db_url: engine configuration that is in the
                        'Database URL' format as supported by SQLAlchemy:
@@ -83,7 +83,7 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
         self._role_resolver = None   # setter-injected after init
         self._credential_resolver = None    # setter-injected after init
         if session is None:
-            self.Session = init_session(db_url)
+            self.Session = init_session(db_url=db_url, settings=settings)
         else:
             self.Session = session
 
@@ -163,8 +163,10 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
         """
         creds = self.get_credential_query(session, identifier).scalar()
         credentials = self.credential_resolver.resolve(creds)
-        if credentials is None:
+
+        if not credentials:
             return None
+
         account = Account(account_id=identifier, credentials=credentials)
 
         return account

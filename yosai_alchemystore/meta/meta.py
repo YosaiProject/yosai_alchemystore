@@ -25,7 +25,7 @@ from yosai_alchemystore import AccountStoreSettings
 Base = declarative_base()
 
 
-def init_engine(db_url=None, echo=False):
+def init_engine(db_url=None, echo=False, settings=None):
     """
 
     You can configure the engine in two ways:
@@ -46,7 +46,7 @@ def init_engine(db_url=None, echo=False):
     :type echo: bool
     """
     if db_url is None:
-        settings = AccountStoreSettings()
+        settings = AccountStoreSettings(settings)
         url = settings.url
     else:
         url = db_url
@@ -55,11 +55,11 @@ def init_engine(db_url=None, echo=False):
     return engine
 
 
-def init_session(db_url=None, echo=False, engine=None):
+def init_session(db_url=None, echo=False, engine=None, settings=None):
     """
     A SQLAlchemy Session requires that an engine be initialized if one isn't
     provided.
     """
     if engine is None:
-        engine = init_engine(db_url=db_url, echo=echo)
+        engine = init_engine(db_url=db_url, echo=echo, settings=settings)
     return sessionmaker(bind=engine)
