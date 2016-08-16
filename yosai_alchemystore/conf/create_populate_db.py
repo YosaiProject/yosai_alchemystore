@@ -19,13 +19,16 @@ from yosai_alchemystore.models.models import (
 import datetime
 from sqlalchemy import case, func, distinct
 from passlib.context import CryptContext
-engine = init_engine()
+from yosai.core import LazySettings
+
+settings = LazySettings(env_var='YOSAI_SETTINGS')
+engine = init_engine(settings=settings)
 Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 import pprint
 pp = pprint.PrettyPrinter(indent=1)
 
-Session = init_session()
+Session = init_session(settings=settings)
 
 # Please watch 'The Big Lebowski' so that you may understand the following data.
 users = [UserModel(first_name='Jeffrey', last_name='Lebowski', identifier='thedude'),

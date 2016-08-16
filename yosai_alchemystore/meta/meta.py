@@ -46,8 +46,8 @@ def init_engine(db_url=None, echo=False, settings=None):
     :type echo: bool
     """
     if db_url is None:
-        settings = AccountStoreSettings(settings)
-        url = settings.url
+        acct_settings = AccountStoreSettings(settings)
+        url = acct_settings.url
     else:
         url = db_url
 
