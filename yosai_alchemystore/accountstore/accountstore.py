@@ -16,24 +16,28 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import time
+
 from yosai_alchemystore import (
     init_session
 )
 
 from yosai_alchemystore.models.models import (
-    CredentialModel,
-    UserModel,
-    DomainModel,
-    ActionModel,
-    ResourceModel,
-    PermissionModel,
-    RoleModel,
+    Credential,
+    CredentialType,
+    User,
+    Domain,
+    Action,
+    Resource,
+    Permission,
+    Role,
     role_membership as role_membership_table,
     role_permission as role_permission_table,
 )
 
 from yosai.core import (
-    Account,
+    IndexedAuthorizationInfo,
+    DefaultPermission,
     account_abcs,
     authc_abcs,
     authz_abcs,
@@ -56,12 +60,9 @@ def session_context(fn):
     return wrap
 
 
-class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
-                          authz_abcs.PermissionResolverAware,
-                          authz_abcs.RoleResolverAware,
-                          authc_abcs.CredentialResolverAware,
-                          account_abcs.CredentialsAccountStore,
-                          account_abcs.AuthorizationAccountStore):
+class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
+                          account_abcs.AuthorizationAccountStore,
+                          account_abcs.LockingAccountStore):
     """
     AccountStore provides the realm-facing API to the relational database
     that is managed through the SQLAlchemy ORM.
@@ -78,129 +79,112 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
             http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
         :type db_url: string
         """
-        self._authz_info_resolver = None
-        self._permission_resolver = None  # setter-injected after init
-        self._role_resolver = None   # setter-injected after init
-        self._credential_resolver = None    # setter-injected after init
         if session is None:
             self.Session = init_session(db_url=db_url, settings=settings)
         else:
             self.Session = session
 
-    @property
-    def authz_info_resolver(self):
-        return self._authz_info_resolver
+    def _get_user_query(self, session, identifier):
+        return session.query(User).filter(User.identifier == identifier)
 
-    @authz_info_resolver.setter
-    def authz_info_resolver(self, authz_info_resolver):
-        self._authz_info_resolver = authz_info_resolver
-
-    @property
-    def permission_resolver(self):
-        return self._permission_resolver
-
-    @permission_resolver.setter
-    def permission_resolver(self, permissionresolver):
-        self._permission_resolver = permissionresolver
-
-    @property
-    def role_resolver(self):
-        return self._role_resolver
-
-    @role_resolver.setter
-    def role_resolver(self, roleresolver):
-        self._role_resolver = roleresolver
-
-    @property
-    def credential_resolver(self):
-        return self._credential_resolver
-
-    @credential_resolver.setter
-    def credential_resolver(self, credentialresolver):
-        self._credential_resolver = credentialresolver
-
-    def get_permissions_query(self, session, identifier):
+    def _get_permissions_query(self, session, identifier):
         """
         :type identifier: string
         """
-        thedomain = case([(DomainModel.name == None, '*')], else_=DomainModel.name)
-        theaction = case([(ActionModel.name == None, '*')], else_=ActionModel.name)
-        theresource = case([(ResourceModel.name == None, '*')], else_=ResourceModel.name)
+        thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
+        theaction = case([(Action.name == None, '*')], else_=Action.name)
+        theresource = case([(Resource.name == None, '*')], else_=Resource.name)
 
         action_agg = func.group_concat(theaction.distinct())
         resource_agg = func.group_concat(theresource.distinct())
         perm = (thedomain + ':' + action_agg + ':' + resource_agg).label("perm")
 
         return (session.query(perm).
-                select_from(UserModel).
-                join(role_membership_table, UserModel.pk_id == role_membership_table.c.user_id).
+                select_from(User).
+                join(role_membership_table, User.pk_id == role_membership_table.c.user_id).
                 join(role_permission_table, role_membership_table.c.role_id == role_permission_table.c.role_id).
-                join(PermissionModel, role_permission_table.c.permission_id == PermissionModel.pk_id).
-                outerjoin(DomainModel, PermissionModel.domain_id == DomainModel.pk_id).
-                outerjoin(ActionModel, PermissionModel.action_id == ActionModel.pk_id).
-                outerjoin(ResourceModel, PermissionModel.resource_id == ResourceModel.pk_id).
-                filter(UserModel.identifier == identifier).
-                group_by(PermissionModel.domain_id, PermissionModel.resource_id))
+                join(Permission, role_permission_table.c.permission_id == Permission.pk_id).
+                outerjoin(Domain, Permission.domain_id == Domain.pk_id).
+                outerjoin(Action, Permission.action_id == Action.pk_id).
+                outerjoin(Resource, Permission.resource_id == Resource.pk_id).
+                filter(User.identifier == identifier).
+                group_by(Permission.domain_id, Permission.resource_id))
 
-    def get_roles_query(self, session, identifier):
+    def _get_roles_query(self, session, identifier):
         """
         :type identifier: string
         """
-        return (session.query(RoleModel).
-                join(role_membership_table, RoleModel.pk_id == role_membership_table.c.role_id).
-                join(UserModel, role_membership_table.c.user_id == UserModel.pk_id).
-                filter(UserModel.identifier == identifier))
+        return (session.query(Role).
+                join(role_membership_table, Role.pk_id == role_membership_table.c.role_id).
+                join(User, role_membership_table.c.user_id == User.pk_id).
+                filter(User.identifier == identifier))
 
-    def get_credential_query(self, session, identifier):
-        return (session.query(CredentialModel.credential).
-                join(UserModel, CredentialModel.user_id == UserModel.pk_id).
-                filter(UserModel.identifier == identifier))
+    def _get_credential_query(self, session, identifier):
+        return (session.query(CredentialType.title, Credential.credential).
+                join(Credential, CredentialType.pk_id == Credential.credential_type_id).
+                join(User, Credential.user_id == User.pk_id).
+                filter(User.identifier == identifier))
 
     @session_context
-    def get_credentials(self, identifier, session=None):
+    def get_authc_info(self, identifier, session=None):
         """
-        :returns: Account
-        """
-        creds = self.get_credential_query(session, identifier).scalar()
-        credentials = self.credential_resolver.resolve(creds)
+        If an Account requires credentials from multiple data stores, this
+        AccountStore is responsible for aggregating them (composite) and returning
+        the results in a single account object.
 
-        if not credentials:
+        :returns: a dict of account attributes
+        """
+        user = self._get_user_query(session, identifier).first()
+
+        creds = self._get_credential_query(session, identifier).all()
+        if not creds:
             return None
+        authc_info = {cred_type: {'credential': cred_value, 'failed_attempts': []}
+                      for cred_type, cred_value in creds}
 
-        account = Account(account_id=identifier, credentials=credentials)
-
-        return account
+        return dict(account_locked=user.account_lock_millis, authc_info=authc_info)
 
     @session_context
     def get_authz_info(self, identifier, session=None):
         """
-        :returns: Account
+        :returns: a dict of account attributes
         """
+        user = self._get_user_query(session, identifier).first()
 
         try:
-            perms = self.get_permissions_query(session, identifier).all()
-
-            permissions = {self.permission_resolver(permission=p.perm)
-                           for p in perms}
+            perms = self._get_permissions_query(session, identifier).all()
+            permissions = {DefaultPermission(wildcard_string=p.perm) for p in perms}
         except (AttributeError, TypeError):
-            permissions = None
+            permissions = set()
 
         try:
-            roles = {self.role_resolver(r.title)
-                     for r in self.get_roles_query(session, identifier).all()}
+            roles = {r.title for r in self._get_roles_query(session, identifier).all()}
         except (AttributeError, TypeError):
             roles = None
 
         if not permissions and not roles:
             return None
 
-        authz_info = self.authz_info_resolver(roles=roles,
-                                              permissions=permissions)
+        authz_info = IndexedAuthorizationInfo(roles=roles, permissions=permissions)
 
-        account = Account(account_id=identifier,
-                          authz_info=authz_info)
+        return dict(account_locked=user.account_lock_millis, authz_info=authz_info)
 
-        return account
+
+    @session_context
+    def lock_account(self, identifier, locked_time, session=None):
+        session.query(User).\
+            filter(User.identifier == identifier).\
+            update({User.account_lock_millis: locked_time})
+
+        session.commit()
+
+    @session_context
+    def unlock_account(self, identifier, session=None):
+        session.query(User).\
+            filter(User.identifier == identifier).\
+            update({User.account_lock_millis: None})
+
+        session.commit()
 
 #    @session_context
 #    def get_account(self, identifier, session=None):
@@ -209,7 +193,7 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
 #        from the database, including credentials AND authorization information
 #
 #        :param identifier:  the request object's identifier
-#        :returns: Account
+#        :returns: dict
 #
 #        CAUTION
 #        --------
@@ -223,19 +207,19 @@ class AlchemyAccountStore(authz_abcs.AuthzInfoResolverAware,
 #
 #        """
 #        cred = self.get_credential_query(session, identifier).scalar()
-#        credential = self.credential_resolver(cred)
+#        credential = self.credential(cred)
 #
-#        roles = {self.role_resolver(r.title)
+#        roles = {self.role(r.title)
 #                 for r in self.get_roles_query(session, identifier).all()}
 #
 #        perms = self.get_permissions_query(session, identifier).all()
-#        permissions = {self.permission_resolver(permission=p.perm)
+#        permissions = {self.permission(permission=p.perm)
 #                       for p in perms}
 #
-#        authz_info = self.authz_info_resolver(roles=roles,
+#        authz_info = self.authz_info(roles=roles,
 #                                              permissions=permissions)
 #
-#        account = Account(account_id=identifier,
+#        account = dict(account_id=identifier,
 #                          credentials=credential,
 #                          authz_info=authz_info)
 #

@@ -16,10 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
-from yosai.core import MisconfiguredException
-
-
 class AccountStoreSettings:
 
     def __init__(self, settings):
@@ -35,10 +31,10 @@ class AccountStoreSettings:
             self.db = self.engine_config.get('db')
             self.echo = self.engine_config.get('echo', False)
 
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as exc:
             msg = ('yosai_alchemystore AlchemyStoreSettings requires a LazySettings instance '
                    'with complete ALCHEMY_STORE settings')
-            raise MisconfiguredException(msg)
+            raise exc.__class__(msg)
 
     @property
     def url(self):
