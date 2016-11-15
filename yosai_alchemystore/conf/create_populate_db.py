@@ -32,7 +32,7 @@ pp = pprint.PrettyPrinter(indent=1)
 Session = init_session(settings=settings)
 
 # Please watch 'The Big Lebowski' so that you may understand the following data.
-users = [User(first_name='Jeffrey', last_name='Lebowski', identifier='thedude'),
+users = [User(first_name='Jeffrey', last_name='Lebowski', identifier='thedude', phone_number='11234567890'),
          User(first_name='Walter', last_name='Sobchak', identifier='walter'),
          User(first_name='Larry', last_name='Sellers', identifier='larry'),
          User(first_name='Jackie', last_name='Treehorn', identifier='jackie'),

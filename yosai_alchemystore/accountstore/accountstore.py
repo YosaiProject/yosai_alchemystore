@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import time
 
 from yosai_alchemystore import (
     init_session
@@ -37,10 +36,7 @@ from yosai_alchemystore.models.models import (
 
 from yosai.core import (
     IndexedAuthorizationInfo,
-    DefaultPermission,
     account_abcs,
-    authc_abcs,
-    authz_abcs,
 )
 
 from sqlalchemy import case, func
@@ -97,9 +93,8 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
 
         action_agg = func.group_concat(theaction.distinct())
         resource_agg = func.group_concat(theresource.distinct())
-        perm = (thedomain + ':' + action_agg + ':' + resource_agg).label("perm")
 
-        return (session.query(perm).
+        return (session.query(thedomain, action_agg, resource_agg).
                 select_from(User).
                 join(role_membership_table, User.pk_id == role_membership_table.c.user_id).
                 join(role_permission_table, role_membership_table.c.role_id == role_permission_table.c.role_id).
@@ -141,6 +136,9 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
             return None
         authc_info = {cred_type: {'credential': cred_value, 'failed_attempts': []}
                       for cred_type, cred_value in creds}
+                      
+        if 'totp_key' in authc_info:
+            authc_info['totp_key']['2fa_info'] = {'phone_number': user.phone_number}
 
         return dict(account_locked=user.account_lock_millis, authc_info=authc_info)
 
@@ -152,10 +150,13 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
         user = self._get_user_query(session, identifier).first()
 
         try:
-            perms = self._get_permissions_query(session, identifier).all()
-            permissions = {DefaultPermission(wildcard_string=p.perm) for p in perms}
+            permissions = [dict(parts=dict(domain=[domain],
+                                           action=action.split(','),
+                                           resource=resource.split(',')))
+                           for domain, action, resource in
+                           self._get_permissions_query(session, identifier).all()]
         except (AttributeError, TypeError):
-            permissions = set()
+            permissions = []
 
         try:
             roles = {r.title for r in self._get_roles_query(session, identifier).all()}
@@ -168,7 +169,6 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
         authz_info = IndexedAuthorizationInfo(roles=roles, permissions=permissions)
 
         return dict(account_locked=user.account_lock_millis, authz_info=authz_info)
-
 
     @session_context
     def lock_account(self, identifier, locked_time, session=None):

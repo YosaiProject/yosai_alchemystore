@@ -69,6 +69,7 @@ class User(Base):
     last_name = Column(String(255), nullable=False)
     identifier = Column(String(255), nullable=False, unique=True)
     account_lock_millis = Column(BigInteger, nullable=True)
+    phone_number = Column(String(100), nullable=True)
 
     roles = relationship('Role',
                          secondary=role_membership,
