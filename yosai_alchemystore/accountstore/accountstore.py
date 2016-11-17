@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 import functools
-from sqlalchemy import case, func
+from sqlalchemy import case, cast, func, Text
 from sqlalchemy.sql import Alias, ColumnElement
 from sqlalchemy.ext.compiler import compiles
 
@@ -181,7 +181,7 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
                                func.row_to_json(as_row(stmt2)).label('parts')).
                  select_from(stmt2)).subquery()
 
-        final = (session.query(stmt3.c.domain, func.json_agg(stmt3.c.parts)).
+        final = (session.query(stmt3.c.domain, cast(func.json_agg(stmt3.c.parts), Text)).
                  select_from(stmt3).
                  group_by(stmt3.c.domain))
 
