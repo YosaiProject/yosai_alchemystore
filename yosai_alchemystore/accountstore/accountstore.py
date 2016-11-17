@@ -16,6 +16,10 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import functools
+from sqlalchemy import case, func
+from sqlalchemy.sql import Alias, ColumnElement
+from sqlalchemy.ext.compiler import compiles
 
 from yosai_alchemystore import (
     init_session
@@ -39,8 +43,25 @@ from yosai.core import (
     account_abcs,
 )
 
-from sqlalchemy import case, func
-import functools
+# -------------------------------------------------------
+# Following is a recipe used to address postgres-json related shortcomings
+# in sqlalchemy v1.1.4.  This recipe will eventually be deprecated
+# ----------------------------------------------------------
+
+
+class as_row(ColumnElement):
+    def __init__(self, expr):
+        assert isinstance(expr, Alias)
+        self.expr = expr
+
+
+@compiles(as_row)
+def _gen_as_row(element, compiler, **kw):
+    return compiler.visit_alias(element.expr, ashint=True, **kw)
+
+
+# -------------------------------------------------------
+# -------------------------------------------------------
 
 
 def session_context(fn):
@@ -135,7 +156,9 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
         action_agg = func.array_agg(theaction.distinct())
 
         stmt1 = (
-            session.query(thedomain.label('domain'),
+            session.query(Permission.domain_id,
+                          thedomain.label('domain'),
+                          Permission.resource_id,
                           theresource.label('resource'),
                           action_agg.label('action')).
             select_from(User).
@@ -146,19 +169,19 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
             outerjoin(Action, Permission.action_id == Action.pk_id).
             outerjoin(Resource, Permission.resource_id == Resource.pk_id).
             filter(User.identifier == identifier).
-            group_by(Permission.domain_id, Permission.resource_id)).subquery()
+            group_by(Permission.domain_id, Domain.name, Permission.resource_id, Resource.name)).subquery()
 
         stmt2 = (session.query(stmt1.c.domain,
                                stmt1.c.action,
-                               func.array_agg(stmt1.c.resource.distinct())).
+                               func.array_agg(stmt1.c.resource.distinct()).label('resource')).
                  select_from(stmt1).
                  group_by(stmt1.c.domain, stmt1.c.action)).subquery()
 
         stmt3 = (session.query(stmt2.c.domain,
-                               func.row_to_json(stmt2)).
+                               func.row_to_json(as_row(stmt2)).label('parts')).
                  select_from(stmt2)).subquery()
 
-        final = (session.query(stmt3.c.domain, func.json_agg(stmt3)).
+        final = (session.query(stmt3.c.domain, func.json_agg(stmt3.c.parts)).
                  select_from(stmt3).
                  group_by(stmt3.c.domain))
 
