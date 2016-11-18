@@ -39,7 +39,6 @@ from yosai_alchemystore.models.models import (
 )
 
 from yosai.core import (
-    IndexedAuthorizationInfo,
     account_abcs,
 )
 
@@ -105,36 +104,6 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
         return session.query(User).filter(User.identifier == identifier)
 
     def _get_permissions_query(self, session, identifier):
-        """
-        :type identifier: string
-        """
-        thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
-        theaction = case([(Action.name == None, '*')], else_=Action.name)
-        theresource = case([(Resource.name == None, '*')], else_=Resource.name)
-
-        action_agg = func.group_concat(theaction.distinct())
-
-        stmt = (
-            session.query(thedomain.label('domain'),
-                          theresource.label('resource'),
-                          action_agg.label('action')).
-            select_from(User).
-            join(role_membership_table, User.pk_id == role_membership_table.c.user_id).
-            join(role_permission_table, role_membership_table.c.role_id == role_permission_table.c.role_id).
-            join(Permission, role_permission_table.c.permission_id == Permission.pk_id).
-            outerjoin(Domain, Permission.domain_id == Domain.pk_id).
-            outerjoin(Action, Permission.action_id == Action.pk_id).
-            outerjoin(Resource, Permission.resource_id == Resource.pk_id).
-            filter(User.identifier == identifier).
-            group_by(Permission.domain_id, Permission.resource_id)).subquery()
-
-        return (session.query(stmt.c.domain,
-                              stmt.c.action,
-                              func.group_concat(stmt.c.resource.distinct())).
-                select_from(stmt).
-                group_by(stmt.c.domain, stmt.c.action))
-
-    def _get_indexed_permissions_query(self, session, identifier):
         """
         select domain, json_agg(parts) as permissions from
             (select domain, row_to_json(r) as parts from
@@ -225,32 +194,18 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
         return dict(account_locked=user.account_lock_millis, authc_info=authc_info)
 
     @session_context
-    def get_authz_info(self, identifier, session=None):
-        """
-        :returns: a dict of account attributes
-        """
-        user = self._get_user_query(session, identifier).first()
-
+    def get_authz_permissions(self, identifier, session=None):
         try:
-            permissions = [dict(parts=dict(domain=[domain],
-                                           action=action.split(','),
-                                           resource=resource.split(',')))
-                           for domain, action, resource in
-                           self._get_permissions_query(session, identifier).all()]
+            return dict(self._get_permissions_query(session, identifier).all())
         except (AttributeError, TypeError):
-            permissions = []
-
-        try:
-            roles = {r.title for r in self._get_roles_query(session, identifier).all()}
-        except (AttributeError, TypeError):
-            roles = None
-
-        if not permissions and not roles:
             return None
 
-        authz_info = IndexedAuthorizationInfo(roles=roles, permissions=permissions)
-
-        return dict(account_locked=user.account_lock_millis, authz_info=authz_info)
+    @session_context
+    def get_authz_roles(self, identifier, session=None):
+        try:
+            return {r.title for r in self._get_roles_query(session, identifier).all()}
+        except (AttributeError, TypeError):
+            return None
 
     @session_context
     def lock_account(self, identifier, locked_time, session=None):
