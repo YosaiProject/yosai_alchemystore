@@ -203,7 +203,7 @@ class AlchemyAccountStore(account_abcs.CredentialsAccountStore,
     @session_context
     def get_authz_roles(self, identifier, session=None):
         try:
-            return {r.title for r in self._get_roles_query(session, identifier).all()}
+            return [r.title for r in self._get_roles_query(session, identifier).all()]
         except (AttributeError, TypeError):
             return None
 
