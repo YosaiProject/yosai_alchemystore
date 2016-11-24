@@ -28,6 +28,7 @@ except IOError:
 install_requires = [
     'yosai',
     'sqlalchemy',
+    'psycopg2'
 ]
 
 setup(
